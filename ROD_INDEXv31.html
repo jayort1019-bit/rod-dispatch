@@ -1764,7 +1764,12 @@ function scoreCall(){
     document.getElementById('score-num').textContent=score;document.getElementById('score-tech-assign').innerHTML=techAssign;
     document.getElementById('score-routing-note').textContent=routing;
     document.getElementById('score-reasons').innerHTML=reasons.map(function(r){return'<span class="reason-tag">'+r+'</span>';}).join('');
-    document.getElementById('score-alerts').innerHTML='';document.getElementById('rod-save-bar').style.display='block';return;
+    document.getElementById('score-alerts').innerHTML='';
+    document.getElementById('rod-save-bar').style.display='block';
+    var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}
+    var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';
+    var sd=document.getElementById('f-sched-date');if(sd&&!sd.value)sd.value=new Date().toISOString().split('T')[0];
+    return;
   }
   var override=document.getElementById('f-override').value;
   if(override==='recall'){var rt=document.getElementById('f-recall-tech').value||'Last Tech on Site';document.getElementById('score-result').className='score-result show override';document.getElementById('score-num').textContent='\ud83d\udd01';document.getElementById('score-tech-assign').textContent='\ud83d\udd01 RECALL \u2014 '+rt;document.getElementById('score-routing-note').textContent='Override active \u2014 same tech returns.';document.getElementById('score-reasons').innerHTML='<span class="reason-tag">Recall override</span>';document.getElementById('score-alerts').innerHTML='';buildAlerts(document.getElementById('score-alerts'));document.getElementById('rod-save-bar').style.display='block';return;}
