@@ -1183,7 +1183,6 @@ function applyRoleTabs(role){
     var t=document.getElementById(id);
     if(t)t.style.display=allowed.indexOf(id)>-1?'':'none';
   });
-  // CSR only: hide tech assign — only dispatcher/manager can assign techs
   window._rodCanAssignTech=['csr_dispatcher','dispatcher','manager','admin'].indexOf(safeRole)>-1;
   if(safeRole==='dispatcher')showTab('dispatch');
   else showTab('intake');
@@ -2312,8 +2311,6 @@ function loadAdminPanel(){
 }
 
 function adminToggle(clientId,isActive){if(isActive&&!confirm('Deactivate this client?'))return;sb.from('clients').update({active:!isActive}).eq('id',clientId).then(function(){rodToast(isActive?'Client deactivated':'Client reactivated');loadAdminPanel();});}
-
-// ── ADMIN USER ROLE MANAGEMENT ──
 function loadClientUsers(clientId,companyName){
   sb.from('users').select('id,email,role').eq('client_id',clientId).then(function(r){
     var users=r.data||[];
@@ -2321,7 +2318,6 @@ function loadClientUsers(clientId,companyName){
     var panel=document.createElement('div');
     panel.id='admin-user-mgmt-panel';
     panel.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2002;display:flex;align-items:center;justify-content:center;padding:20px';
-    var roleOpts=['csr','csr_dispatcher','dispatcher','manager','admin'].map(function(r){return'<option value="'+r+'">'+r.toUpperCase().replace('_',' / ')+'</option>';}).join('');
     var userRows=users.length?users.map(function(u){
       return'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'+
         '<div style="flex:1;font-size:0.82rem">'+u.email+'</div>'+
@@ -2332,17 +2328,17 @@ function loadClientUsers(clientId,companyName){
     }).join(''):'<div style="color:var(--muted);font-size:0.8rem;padding:12px 0">No users found for this client yet.</div>';
     panel.innerHTML=
       '<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:500px">'+
-        '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--accent2);margin-bottom:4px">👥 TEAM ACCESS ROLES</div>'+
+        '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--accent2);margin-bottom:4px">&#128101; TEAM ACCESS ROLES</div>'+
         '<div style="font-size:0.85rem;color:var(--muted);margin-bottom:16px">'+companyName+'</div>'+
         '<div style="margin-bottom:16px">'+userRows+'</div>'+
         '<div style="padding:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">'+
           '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.6rem;color:var(--muted);margin-bottom:8px;letter-spacing:1px">ROLE PERMISSIONS</div>'+
           '<div style="font-size:0.72rem;color:var(--muted);line-height:1.8">'+
-            '🔵 <strong style="color:var(--accent2)">CSR</strong> — Intake only. Cannot assign techs.<br>'+
-            '🟠 <strong style="color:var(--accent)">CSR / DISPATCHER</strong> — Full intake + dispatch + schedule.<br>'+
-            '🟠 <strong style="color:var(--accent)">DISPATCHER</strong> — Dispatch board + schedule only.<br>'+
-            '🟢 <strong style="color:var(--accent3)">MANAGER</strong> — All tabs except Admin.<br>'+
-            '⭐ <strong style="color:var(--gold)">ADMIN</strong> — Full access including Admin panel.'+
+            '&#128309; <strong style="color:var(--accent2)">CSR</strong> \u2014 Intake only. Cannot assign techs.<br>'+
+            '&#128992; <strong style="color:var(--accent)">CSR / DISPATCHER</strong> \u2014 Full intake + dispatch + schedule.<br>'+
+            '&#128992; <strong style="color:var(--accent)">DISPATCHER</strong> \u2014 Dispatch board + schedule only.<br>'+
+            '&#128994; <strong style="color:var(--accent3)">MANAGER</strong> \u2014 All tabs except Admin.<br>'+
+            '&#11088; <strong style="color:var(--gold)">ADMIN</strong> \u2014 Full access including Admin panel.'+
           '</div>'+
         '</div>'+
         '<button class="btn btn-outline" onclick="document.getElementById(\'admin-user-mgmt-panel\').remove()" style="width:100%">Close</button>'+
@@ -2353,9 +2349,10 @@ function loadClientUsers(clientId,companyName){
 function setUserRole(userId,role){
   sb.from('users').update({role:role}).eq('id',userId).then(function(r){
     if(r.error){rodToast('Error: '+r.error.message);return;}
-    rodToast('Role updated to '+role.toUpperCase().replace('_',' / ')+' ✓');
+    rodToast('Role updated to '+role.toUpperCase().replace('_',' / ')+' \u2713');
   });
 }
+// loadAdminLiveFeed is defined above in v20 new functions block
 
 // BASELINE — save and load
 function saveBaseline(){
