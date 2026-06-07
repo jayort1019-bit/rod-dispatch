@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>R.O.D. — Revenue Optimization Dispatch v42</title>
+<title>R.O.D. — Revenue Optimization Dispatch v43</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -1072,7 +1072,7 @@ footer{position:relative;z-index:10;text-align:center;padding:20px 32px;border-t
 <script>
 var SUPABASE_URL='https://yfwqslndapntkgxsndyd.supabase.co';
 var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlmd3FzbG5kYXBudGtneHNuZHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjczNjIsImV4cCI6MjA5NDMwMzM2Mn0.ZeP-lVgoayL7TcE8xp2LcNZ9tq7JJ9hnm1Y41zMKSjo';
-var sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:false}});
+var sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 var SUPABASE_SERVICE_KEY='sb_secret_oPVdl2qb9KAxPD894Avscg_g_BP-ETa';
 var sbAdmin=supabase.createClient(SUPABASE_URL,SUPABASE_SERVICE_KEY,{auth:{storageKey:'sb-admin-token',autoRefreshToken:false,persistSession:false}});
 var currentUser=null,currentClientId=null,currentCustomer=null,currentMode='residential';
@@ -1170,18 +1170,18 @@ function showRoleBadge(role){
   badge.style.display='inline-flex';
 }
 function applyRoleTabs(role){
-  var safeRole=role||'manager';
-  var tabSets={
+  var safeRole = role || 'manager';
+  var tabSets = {
     csr:            ['tab-intake'],
     csr_dispatcher: ['tab-intake','tab-dispatch','tab-schedule','tab-customers','tab-reports','tab-tech'],
     dispatcher:     ['tab-dispatch','tab-schedule','tab-tech'],
     manager:        ['tab-intake','tab-dispatch','tab-schedule','tab-customers','tab-reports','tab-tech','tab-techmgmt'],
     admin:          ['tab-intake','tab-dispatch','tab-schedule','tab-customers','tab-reports','tab-tech','tab-techmgmt','tab-admin']
   };
-  var allowed=tabSets[safeRole]||tabSets['manager'];
+  var allowed = tabSets[safeRole] || tabSets['manager'];
   ['tab-intake','tab-dispatch','tab-schedule','tab-customers','tab-reports','tab-tech','tab-techmgmt'].forEach(function(id){
-    var t=document.getElementById(id);
-    if(t)t.style.display=allowed.indexOf(id)>-1?'':'none';
+    var t = document.getElementById(id);
+    if(t) t.style.display = allowed.indexOf(id) > -1 ? '' : 'none';
   });
   window._rodCanAssignTech=['csr_dispatcher','dispatcher','manager','admin'].indexOf(safeRole)>-1;
   if(safeRole==='dispatcher')showTab('dispatch');
@@ -2096,7 +2096,7 @@ function scoreCommercial(){
     document.getElementById('score-reasons').innerHTML=reasons.map(function(r){return'<span class="reason-tag">'+r+'</span>';}).join('');
     document.getElementById('score-alerts').innerHTML='';
     document.getElementById('rod-save-bar').style.display='block';
-    var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display=window._rodCanAssignTech===false?'none':'block';if(window._rodCanAssignTech!==false)populateTechAssignDropdown();}
+    var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}
     var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';
     var sd=document.getElementById('f-sched-date');if(sd&&!sd.value)sd.value=new Date().toISOString().split('T')[0];
     return;
@@ -2171,7 +2171,7 @@ function scoreCall(){
   document.getElementById('score-reasons').innerHTML=ssHtml+reasons.map(function(r){return'<span class="reason-tag">'+r+'</span>';}).join('');
   document.getElementById('score-alerts').innerHTML='';buildAlerts(document.getElementById('score-alerts'));
   document.getElementById('rod-save-bar').style.display='block';
-  var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display=window._rodCanAssignTech===false?'none':'block';if(window._rodCanAssignTech!==false)populateTechAssignDropdown();}
+  var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}
   var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';
   // Default scheduled date to today
   var sd=document.getElementById('f-sched-date');if(sd&&!sd.value)sd.value=new Date().toISOString().split('T')[0];
@@ -2261,21 +2261,12 @@ function loadAdminPanel(){
           btn.setAttribute('data-active',String(on));
           btn.onclick=function(){adminToggle(this.getAttribute('data-id'),this.getAttribute('data-active')==='true');};
           td7.appendChild(btn);
-          var td8=document.createElement('td');
-          var roleBtn=document.createElement('button');
-          roleBtn.className='btn btn-outline btn-sm';
-          roleBtn.textContent='👥 Roles';
-          roleBtn.style.fontSize='0.6rem';
-          roleBtn.setAttribute('data-id',c.id);
-          roleBtn.setAttribute('data-name',c.company_name);
-          roleBtn.onclick=function(){loadClientUsers(this.getAttribute('data-id'),this.getAttribute('data-name'));};
-          td8.appendChild(roleBtn);
-          tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);tr.appendChild(td8);
+          tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);
           tbody.appendChild(tr);
         });
         var table=document.createElement('table');
         table.className='admin-table';
-        table.innerHTML='<thead><tr><th>Company</th><th>Plan</th><th>Customers</th><th>Calls</th><th>Avg Score</th><th>Status</th><th>Action</th><th>Access</th></tr></thead>';
+        table.innerHTML='<thead><tr><th>Company</th><th>Plan</th><th>Customers</th><th>Calls</th><th>Avg Score</th><th>Status</th><th>Action</th></tr></thead>';
         table.appendChild(tbody);
         wrap.innerHTML='';
         wrap.appendChild(table);
@@ -2311,47 +2302,6 @@ function loadAdminPanel(){
 }
 
 function adminToggle(clientId,isActive){if(isActive&&!confirm('Deactivate this client?'))return;sb.from('clients').update({active:!isActive}).eq('id',clientId).then(function(){rodToast(isActive?'Client deactivated':'Client reactivated');loadAdminPanel();});}
-function loadClientUsers(clientId,companyName){
-  sb.from('users').select('id,email,role').eq('client_id',clientId).then(function(r){
-    var users=r.data||[];
-    var existing=document.getElementById('admin-user-mgmt-panel');if(existing)existing.remove();
-    var panel=document.createElement('div');
-    panel.id='admin-user-mgmt-panel';
-    panel.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2002;display:flex;align-items:center;justify-content:center;padding:20px';
-    var userRows=users.length?users.map(function(u){
-      return'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'+
-        '<div style="flex:1;font-size:0.82rem">'+u.email+'</div>'+
-        '<select onchange="setUserRole(\''+u.id+'\',this.value)" style="padding:5px 8px;font-size:0.75rem;background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:4px">'+
-          ['csr','csr_dispatcher','dispatcher','manager','admin'].map(function(ro){return'<option value="'+ro+'"'+(u.role===ro?' selected':'')+'>'+ro.toUpperCase().replace('_',' / ')+'</option>';}).join('')+
-        '</select>'+
-      '</div>';
-    }).join(''):'<div style="color:var(--muted);font-size:0.8rem;padding:12px 0">No users found for this client yet.</div>';
-    panel.innerHTML=
-      '<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:500px">'+
-        '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--accent2);margin-bottom:4px">&#128101; TEAM ACCESS ROLES</div>'+
-        '<div style="font-size:0.85rem;color:var(--muted);margin-bottom:16px">'+companyName+'</div>'+
-        '<div style="margin-bottom:16px">'+userRows+'</div>'+
-        '<div style="padding:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;margin-bottom:16px">'+
-          '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.6rem;color:var(--muted);margin-bottom:8px;letter-spacing:1px">ROLE PERMISSIONS</div>'+
-          '<div style="font-size:0.72rem;color:var(--muted);line-height:1.8">'+
-            '&#128309; <strong style="color:var(--accent2)">CSR</strong> \u2014 Intake only. Cannot assign techs.<br>'+
-            '&#128992; <strong style="color:var(--accent)">CSR / DISPATCHER</strong> \u2014 Full intake + dispatch + schedule.<br>'+
-            '&#128992; <strong style="color:var(--accent)">DISPATCHER</strong> \u2014 Dispatch board + schedule only.<br>'+
-            '&#128994; <strong style="color:var(--accent3)">MANAGER</strong> \u2014 All tabs except Admin.<br>'+
-            '&#11088; <strong style="color:var(--gold)">ADMIN</strong> \u2014 Full access including Admin panel.'+
-          '</div>'+
-        '</div>'+
-        '<button class="btn btn-outline" onclick="document.getElementById(\'admin-user-mgmt-panel\').remove()" style="width:100%">Close</button>'+
-      '</div>';
-    document.body.appendChild(panel);
-  });
-}
-function setUserRole(userId,role){
-  sb.from('users').update({role:role}).eq('id',userId).then(function(r){
-    if(r.error){rodToast('Error: '+r.error.message);return;}
-    rodToast('Role updated to '+role.toUpperCase().replace('_',' / ')+' \u2713');
-  });
-}
 // loadAdminLiveFeed is defined above in v20 new functions block
 
 // BASELINE — save and load
