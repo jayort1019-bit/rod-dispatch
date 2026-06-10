@@ -1,0 +1,2751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>R.O.D. — Revenue Optimization Dispatch v58</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080c10;--panel:#0d1318;--border:#1a2530;--accent:#f97316;--accent2:#0ea5e9;--accent3:#22c55e;--warn:#eab308;--danger:#ef4444;--text:#e2e8f0;--muted:#4a6070;--grid:rgba(255,255,255,0.02);--gold:#d97706;--qa:#a855f7;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+/* LOGIN */
+.login-screen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+.login-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:48px;width:100%;max-width:420px;text-align:center;}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:6px;color:var(--accent);text-shadow:0 0 30px rgba(249,115,22,0.4);margin-bottom:4px;}
+.login-sub{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:32px;}
+.login-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;text-align:left;}
+.login-field label{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.login-field input{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:12px 14px;font-size:0.95rem;outline:none;transition:border-color 0.2s;}
+.login-field input:focus{border-color:var(--accent);}
+.login-btn{width:100%;margin-top:8px;padding:14px;background:var(--accent);color:#000;font-family:'Share Tech Mono',monospace;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;border:none;border-radius:5px;cursor:pointer;}
+.login-btn:hover{background:#fb923c;}
+.login-error{color:var(--danger);font-size:0.8rem;margin-top:10px;font-family:'Share Tech Mono',monospace;display:none;}
+.login-loading{color:var(--muted);font-size:0.78rem;margin-top:10px;font-family:'Share Tech Mono',monospace;display:none;}
+/* LAYOUT */
+header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:rgba(8,12,16,0.95);backdrop-filter:blur(10px);}
+.logo-main{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;color:var(--accent);}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--muted);letter-spacing:2px;}
+.header-right{display:flex;align-items:center;gap:20px;}
+.user-badge{display:flex;flex-direction:column;align-items:flex-end;border-right:1px solid var(--border);padding-right:20px;}
+.user-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;}
+.user-company{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:2px;color:var(--accent);}
+.logout-btn{font-family:'Share Tech Mono',monospace;font-size:0.62rem;padding:6px 12px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;}
+.logout-btn:hover{border-color:var(--danger);color:var(--danger);}
+.status-dot{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--accent3);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent3);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+nav{position:relative;z-index:10;display:flex;gap:4px;padding:12px 32px 0;border-bottom:1px solid var(--border);background:rgba(8,12,16,0.9);overflow-x:auto;align-items:flex-end;}
+.tab{font-family:'Share Tech Mono',monospace;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;padding:8px 20px;border:1px solid transparent;border-bottom:none;cursor:pointer;color:var(--muted);background:transparent;transition:all 0.2s;border-radius:4px 4px 0 0;white-space:nowrap;}
+.tab:hover{color:var(--text);border-color:var(--border);}
+.tab.active{color:var(--accent);border-color:var(--border);background:var(--panel);border-bottom:1px solid var(--panel);margin-bottom:-1px;}
+main{position:relative;z-index:1;padding:24px 32px;}
+.view{display:none;}.view.active{display:block;}
+/* COMPONENTS */
+.btn{font-family:'Share Tech Mono',monospace;font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;padding:10px 20px;border-radius:5px;cursor:pointer;border:none;transition:all 0.2s;}
+.btn-primary{background:var(--accent);color:#000;font-weight:700;}
+.btn-primary:hover{background:#fb923c;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-sm{padding:6px 12px;font-size:0.65rem;}
+.btn-danger{background:var(--danger);color:#fff;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);}
+.panel-title{font-family:'Share Tech Mono',monospace;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent);}
+.panel-body{padding:20px;}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:20px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card.orange::before{background:var(--accent);}.stat-card.blue::before{background:var(--accent2);}.stat-card.green::before{background:var(--accent3);}.stat-card.yellow::before{background:var(--warn);}
+.stat-label{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;margin-bottom:4px;}
+.stat-card.orange .stat-value{color:var(--accent);}.stat-card.blue .stat-value{color:var(--accent2);}.stat-card.green .stat-value{color:var(--accent3);}.stat-card.yellow .stat-value{color:var(--warn);}
+.stat-change{font-size:0.72rem;color:var(--muted);}
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}.form-group.full{grid-column:1/-1;}
+label{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+input,select,textarea{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:0.88rem;transition:border-color 0.2s;outline:none;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+select option{background:#1a2530;color:var(--text);}
+select optgroup{background:#0d1318;color:var(--accent);font-style:normal;font-weight:700;font-size:0.78rem;}
+select optgroup option{background:#1a2530;color:var(--text);font-weight:400;}
+textarea{resize:vertical;min-height:80px;}
+/* SCORE */
+.score-result{margin-top:20px;padding:20px;border-radius:8px;border:1px solid;display:none;}
+.score-result.show{display:block;}
+.score-result.high{border-color:var(--accent);background:rgba(249,115,22,0.06);}
+.score-result.medium{border-color:var(--accent2);background:rgba(14,165,233,0.06);}
+.score-result.low{border-color:var(--accent3);background:rgba(34,197,94,0.06);}
+.score-result.override{border-color:var(--warn);background:rgba(234,179,8,0.06);}
+.score-num{font-family:'Bebas Neue',sans-serif;font-size:4rem;line-height:1;}
+.score-result.high .score-num{color:var(--accent);}.score-result.medium .score-num{color:var(--accent2);}.score-result.low .score-num{color:var(--accent3);}.score-result.override .score-num{color:var(--warn);}
+.score-tech{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;margin:4px 0;}
+.score-routing{font-size:0.82rem;color:var(--muted);margin-bottom:12px;}
+.reason-tag{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:0.6rem;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,0.06);color:var(--muted);margin:2px;}
+/* BOARD */
+.board-nav{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.board-date-label{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text);min-width:220px;}
+.board-nav-btn{font-family:'Share Tech Mono',monospace;font-size:0.7rem;padding:7px 14px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;}
+.board-nav-btn:hover,.board-nav-btn.active{border-color:var(--accent2);color:var(--accent2);}
+.board-nav-btn.today-btn{border-color:var(--accent3);color:var(--accent3);}
+/* WEEK GRID */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+.week-cell{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;min-height:180px;cursor:pointer;}
+.week-cell.today{border-color:var(--accent2);}
+.week-cell-header{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.week-cell-header.today-hdr{background:rgba(14,165,233,0.1);}
+.week-day-name{font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--muted);}
+.week-day-num{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;}
+.week-job-count{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;}
+.week-cell-body{padding:8px;}
+.week-job-card{padding:4px 6px;margin-bottom:3px;border-radius:3px;border-left:2px solid;background:rgba(255,255,255,0.02);cursor:pointer;font-size:0.7rem;}
+.week-job-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.week-job-slot{font-size:0.6rem;color:var(--muted);}
+/* DAY GRID */
+.day-grid-wrap{overflow-x:auto;}
+.day-grid{border-collapse:collapse;width:100%;min-width:600px;}
+.day-grid th{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;padding:10px 12px;border:1px solid var(--border);background:var(--panel);white-space:nowrap;}
+.day-grid td{padding:6px 8px;border:1px solid var(--border);vertical-align:top;min-width:130px;background:rgba(255,255,255,0.01);}
+.day-slot-label{font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--muted);padding:8px 10px;border:1px solid var(--border);white-space:nowrap;background:rgba(0,0,0,0.2);vertical-align:middle;}
+.day-job-card{padding:6px 8px;margin-bottom:4px;border-radius:4px;border-left:3px solid;cursor:pointer;background:rgba(255,255,255,0.03);}
+.day-job-card:hover{background:rgba(255,255,255,0.06);}
+.day-job-name{font-size:0.75rem;font-weight:600;margin-bottom:2px;}
+.day-job-meta{font-size:0.62rem;color:var(--muted);}
+.open-cell{font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--border);text-align:center;padding:8px 0;letter-spacing:1px;}
+/* CUSTOMER DB */
+.cust-table{width:100%;border-collapse:collapse;}
+.cust-table th{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;padding:10px 14px;border-bottom:2px solid var(--border);color:var(--muted);text-align:left;}
+.cust-table td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:0.85rem;vertical-align:middle;}
+.cust-table tr:hover td{background:rgba(255,255,255,0.02);cursor:pointer;}
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;padding:28px;}
+.modal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;}
+.modal-close{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;line-height:1;}
+.modal-close:hover{color:var(--danger);}
+/* TOAST */
+.rod-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 24px;font-family:'Share Tech Mono',monospace;font-size:0.75rem;letter-spacing:1px;color:var(--accent3);z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center;}
+.rod-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.rod-toast.warn{color:var(--warn);border-color:rgba(234,179,8,0.4);}
+.rod-toast.danger{color:var(--danger);border-color:rgba(239,68,68,0.4);}
+/* SAVE BAR */
+#rod-save-bar{display:none;position:sticky;bottom:0;left:0;right:0;z-index:100;padding:16px 32px;background:rgba(8,12,16,0.97);border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+/* TECH TIER COLORS */
+.tier-opp{color:var(--accent);}
+.tier-svc{color:var(--accent2);}
+.tier-mnt{color:var(--accent3);}
+.tier-qa{color:var(--qa);}
+/* MISC */
+.section-label{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.intake-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;}
+.intake-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--text);margin-bottom:20px;}
+.returning-banner{padding:12px 16px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:6px;margin-bottom:16px;display:none;}
+.returning-name{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--accent3);}
+.returning-meta{font-size:0.75rem;color:var(--muted);margin-top:2px;}
+.lookup-wrap{position:relative;}
+.lookup-dropdown{display:none;position:absolute;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--border);border-radius:0 0 6px 6px;z-index:500;max-height:200px;overflow-y:auto;}
+.lookup-dropdown.show{display:block;}
+.lookup-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.85rem;}
+.lookup-item:hover{background:rgba(255,255,255,0.04);}
+.lookup-item-name{font-weight:600;color:var(--accent3);}
+.lookup-item-meta{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+footer{padding:20px 32px;border-top:1px solid var(--border);text-align:center;}
+/* REPORTS */
+.report-period-btns{display:flex;gap:8px;margin-bottom:20px;}
+.rev-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.rev-label{font-size:0.8rem;width:140px;flex-shrink:0;}
+.rev-bar-wrap{flex:1;background:rgba(255,255,255,0.04);border-radius:4px;height:8px;overflow:hidden;}
+.rev-bar{height:100%;border-radius:4px;}
+.rev-val{font-family:'Bebas Neue',sans-serif;font-size:1rem;width:80px;text-align:right;}
+/* TECH CARDS */
+.tech-card{display:flex;align-items:center;gap:14px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;}
+.tech-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;flex-shrink:0;}
+.tech-avatar.opportunity{background:rgba(249,115,22,0.15);color:var(--accent);border:1px solid rgba(249,115,22,0.3);}
+.tech-avatar.service{background:rgba(14,165,233,0.15);color:var(--accent2);border:1px solid rgba(14,165,233,0.3);}
+.tech-avatar.maintenance{background:rgba(34,197,94,0.15);color:var(--accent3);border:1px solid rgba(34,197,94,0.3);}
+.tech-avatar.qa{background:rgba(168,85,247,0.15);color:var(--qa);border:1px solid rgba(168,85,247,0.3);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+</style>
+</head>
+<body>
+<!-- LOGIN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-box">
+    <div class="login-logo">R.O.D.</div>
+    <div class="login-sub">Revenue Optimization Dispatch</div>
+    <div class="login-field"><label>Email</label><input type="email" id="login-email" placeholder="your@email.com"/></div>
+    <div class="login-field"><label>Password</label><input type="password" id="login-password" placeholder="••••••••"/></div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div id="login-error" class="login-error"></div>
+    <div id="login-loading" class="login-loading">Authenticating...</div>
+    <div style="margin-top:20px;font-size:0.78rem;color:var(--muted)">New client? <span style="color:var(--accent2);cursor:pointer" onclick="showRegister()">Create account</span></div>
+  </div>
+</div>
+<!-- REGISTER -->
+<div id="register-screen" class="login-screen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo">R.O.D.</div>
+    <div class="login-sub">Create Account</div>
+    <div class="login-field"><label>Company Name</label><input type="text" id="reg-company" placeholder="EMG Heating & Air"/></div>
+    <div class="login-field"><label>Your Name</label><input type="text" id="reg-name" placeholder="Full name"/></div>
+    <div class="login-field"><label>Email</label><input type="email" id="reg-email" placeholder="your@email.com"/></div>
+    <div class="login-field"><label>Password</label><input type="password" id="reg-password" placeholder="Min 6 characters"/></div>
+    <button class="login-btn" onclick="doRegister()">Create Account</button>
+    <div id="reg-error" class="login-error"></div>
+    <div id="reg-loading" class="login-loading">Creating account...</div>
+    <div style="margin-top:20px;font-size:0.78rem;color:var(--muted)"><span style="color:var(--accent2);cursor:pointer" onclick="showLogin()">← Back to sign in</span></div>
+  </div>
+</div>
+<!-- APP -->
+<div id="app" style="display:none">
+<header>
+  <div>
+    <div class="logo-main">R.O.D.</div>
+    <div class="logo-sub">Revenue Optimization Dispatch</div>
+  </div>
+  <div class="header-right">
+    <div class="user-badge">
+      <span id="header-name" class="user-name" style="display:none"></span>
+      <span id="header-company" class="user-company">Loading...</span>
+      <span id="header-role-badge" style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--muted);letter-spacing:1px;margin-top:2px"></span>
+    </div>
+    <div class="status-dot"><div class="dot"></div>LIVE</div>
+    <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+  </div>
+</header>
+<nav>
+  <button class="tab active" id="tab-intake" onclick="showTab('intake')">📞 Call Intake</button>
+  <button class="tab" id="tab-dispatch" onclick="showTab('dispatch')">📋 Board &amp; Schedule</button>
+  <button class="tab" id="tab-customers" onclick="showTab('customers')">👥 Customer DB</button>
+  <button class="tab" id="tab-reports" onclick="showTab('reports')">📊 Reports</button>
+  <button class="tab" id="tab-tech" onclick="showTab('tech')">🔧 Tech Mobile</button>
+  <button class="tab" id="tab-techmgmt" onclick="showTab('techmgmt')" style="display:none">⚙️ Tech Mgmt</button>
+  <button class="tab" id="tab-admin" onclick="showTab('admin')" style="display:none">🛡️ Admin</button>
+</nav>
+<main>
+<!-- ═══════════════════════════════════════════════════
+     SECTION 1: CALL INTAKE
+═══════════════════════════════════════════════════ -->
+<div id="view-intake" class="view active">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div id="intake-title" style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px">CSR CALL INTAKE — OPPORTUNITY SCORING</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="btn-residential" class="btn btn-primary" onclick="setMode('residential')">🏠 Residential</button>
+      <button id="btn-commercial" class="btn btn-outline" onclick="setMode('commercial')">🏢 Commercial</button>
+      <button class="btn btn-outline" onclick="resetForm()" style="color:var(--danger);border-color:var(--border)">Clear</button>
+    </div>
+  </div>
+  <!-- RETURNING CUSTOMER BANNER -->
+  <div id="g-returning-banner" class="returning-banner">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="returning-name" id="ret-cust-name"></div>
+        <div class="returning-meta" id="ret-cust-meta"></div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="clearReturnCustomer()" style="white-space:nowrap">Not This Customer</button>
+    </div>
+  </div>
+  <!-- PM ALERT -->
+  <div id="g-pm-first-visit-alert" style="display:none;margin-bottom:16px">
+    <div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.3);border-radius:8px;padding:14px 16px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:2px;color:var(--accent2);margin-bottom:6px">🏢 PROPERTY MANAGER — SIMPLIFIED INTAKE</div>
+      <div style="font-size:0.8rem;color:var(--text);line-height:1.6">Equipment age and history collected on-site. Focus: owner name, address, reason for call, scheduling.</div>
+    </div>
+  </div>
+  <!-- ADDRESS LOOKUP -->
+  <div class="intake-card">
+    <div class="section-label">Address Lookup — Returning Customer</div>
+    <div class="grid-2">
+      <div class="form-group full">
+        <label>Service Address</label>
+        <div class="lookup-wrap">
+          <input type="text" id="f-address" placeholder="Start typing address..." oninput="rodAddressLookup(this.value)" autocomplete="off"/>
+          <div id="lookup-addr-dropdown" class="lookup-dropdown"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- CALLER VERIFICATION -->
+  <div id="g-main-form" style="display:none">
+    <div class="intake-card">
+      <div class="section-label">Required First — Caller Verification</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Caller Type</label>
+          <select id="f-caller-type" onchange="handleCallerType()">
+            <option value="">— Verify caller —</option>
+            <option value="homeowner">✅ Homeowner — Property Owner</option>
+            <option value="homeowner_rental">✅ Homeowner — Rental Property</option>
+            <option value="property_manager">🏢 Property Manager — Authorized by Owner</option>
+            <option value="commercial_rep">🏢 Commercial Property Owner / Authorized Rep</option>
+            <option value="existing">Existing Customer</option>
+          </select>
+        </div>
+      </div>
+      <!-- RENTAL TENANT FIELDS -->
+      <div id="g-rental-block" style="display:none;margin-top:12px">
+        <div class="form-grid">
+          <div class="form-group"><label>Tenant Name</label><input type="text" id="f-tenant-name" placeholder="Tenant's name"/></div>
+          <div class="form-group"><label>Tenant Phone</label><input type="text" id="f-tenant-phone" placeholder="Tenant's phone"/></div>
+        </div>
+        <div style="margin-top:8px;padding:8px 12px;background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-radius:5px;font-size:0.75rem;color:var(--warn)">⚠️ DO NOT give the tenant tech's name or arrival window without homeowner approval first.</div>
+      </div>
+    </div>
+    <!-- CUSTOMER INFO -->
+    <div class="intake-card">
+      <div class="section-label">Customer Information</div>
+      <div class="form-grid">
+        <div class="form-group" id="g-name-field"><label>Customer / Company Name</label><input type="text" id="f-name" placeholder="Full name or business name"/></div>
+        <div class="form-group" id="g-phone-field"><label>Phone Number</label><input type="text" id="f-phone" placeholder="(555) 000-0000"/></div>
+        <div class="form-group full" id="g-email-field"><label>Email Address <span style="color:var(--muted);font-size:0.6rem">(quotes &amp; invoices)</span></label><input type="email" id="f-email" placeholder="customer@email.com"/></div>
+        <div class="form-group" id="g-call-date-field"><label>Call Date</label><input type="date" id="f-call-date"/></div>
+      </div>
+    </div>
+    <!-- RESIDENTIAL FIELDS -->
+    <div id="g-residential-fields" class="intake-card" style="display:none">
+      <div class="section-label">Property &amp; Equipment</div>
+      <div class="form-grid">
+        <div class="form-group" id="g-equip-age-field">
+          <label>Equipment Age (years)</label>
+          <select id="f-equip-age" onchange="handleReason()">
+            <option value="">— Select —</option>
+            <option value="0-2">0–2 years (New)</option>
+            <option value="3-8">3–8 years</option>
+            <option value="9-14">9–14 years</option>
+            <option value="15+">15+ years (Aged)</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-home-age-field">
+          <label>Home Age</label>
+          <select id="f-home-age">
+            <option value="">— Select —</option>
+            <option value="0-5">0–5 years</option>
+            <option value="6-10">6–10 years</option>
+            <option value="10-20">10–20 years</option>
+            <option value="20+">20+ years</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-last-maint-field">
+          <label>Last Maintenance Visit</label>
+          <select id="f-last-maint">
+            <option value="">— Select —</option>
+            <option value="current">Within past year</option>
+            <option value="2yr">1–2 years ago</option>
+            <option value="3yr">3+ years ago</option>
+            <option value="never">Never / Unknown</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-member-field">
+          <label>Maintenance Plan Member?</label>
+          <select id="f-member" onchange="handleMemberChange()">
+            <option value="">— Select —</option>
+            <option value="yes">Yes — Active Member</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-warranty-field">
+          <label>Home Warranty?</label>
+          <select id="f-warranty" onchange="handleWarranty()">
+            <option value="">— Select —</option>
+            <option value="no">No</option>
+            <option value="yes">Yes — Has Home Warranty</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-warranty-company-wrap" style="display:none"><label>Warranty Company</label><input type="text" id="f-warranty-company" placeholder="Company name"/></div>
+        <div class="form-group" id="g-builder-field" style="display:none"><label>Builder / Rep Name</label><input type="text" id="f-builder-rep" placeholder="Builder or rep name (new construction)"/></div>
+      </div>
+    </div>
+    <!-- CALL REASON -->
+    <div class="intake-card" id="g-reason-card">
+      <div class="section-label">Reason for Call</div>
+      <div class="form-grid">
+        <div class="form-group" id="g-res-reason-wrap">
+          <label>Reason (Residential)</label>
+          <select id="f-reason" onchange="handleReason()">
+            <option value="">— Select reason —</option>
+            <optgroup label="Service Calls">
+              <option value="no_cool_heat">No Cool / No Heat</option>
+              <option value="frozen_unit">Unit Frozen / Ice Build-up</option>
+              <option value="noise">Unusual Noise</option>
+              <option value="not_turning_on">Unit Not Turning On</option>
+              <option value="refrigerant_leak">Refrigerant Leak</option>
+              <option value="drain_leak">Primary Drain Leak / Water Issue</option>
+              <option value="repair">General Repair</option>
+              <option value="warranty">Warranty Issue</option>
+            </optgroup>
+            <optgroup label="Maintenance">
+              <option value="maintenance">Maintenance / Tune-Up</option>
+              <option value="filter_change">Filter Change Only</option>
+            </optgroup>
+            <optgroup label="Sales Opportunities">
+              <option value="new_system_quote">New System Quote</option>
+              <option value="replacement">Replacement</option>
+              <option value="changeout">Change-Out</option>
+              <option value="new_duct_quote">New Ductwork Quote</option>
+              <option value="new_construction">New Construction</option>
+            </optgroup>
+          </select>
+        </div>
+        <!-- WHICH SYSTEM — shown only for no-cool, frozen, noise, not-turning-on -->
+        <div class="form-group" id="g-which-system" style="display:none">
+          <label>Which System Is Affected?</label>
+          <select id="f-which-system">
+            <option value="">— Select —</option>
+            <option value="system_1">System 1</option>
+            <option value="system_2">System 2</option>
+            <option value="system_3">System 3</option>
+            <option value="all">All Systems</option>
+            <option value="unknown">Unknown / Not Sure</option>
+          </select>
+        </div>
+        <!-- COIL QUESTION — shown only for no-cool and frozen -->
+        <div class="form-group" id="g-coil-question" style="display:none">
+          <label>Has Coil Been Cleaned Recently?</label>
+          <select id="f-coil-clean">
+            <option value="">— Select —</option>
+            <option value="yes_recent">Yes — within past year</option>
+            <option value="yes_old">Yes — over a year ago</option>
+            <option value="no">No / Never</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-override-field">
+          <label>Override / Special Routing</label>
+          <select id="f-override" onchange="handleOverride()">
+            <option value="">— Standard Scoring —</option>
+            <option value="recall">🔄 Recall — Same Tech Returns</option>
+            <option value="preferred">⭐ Preferred Tech Request</option>
+            <option value="senior">⚠️ Senior Tech Required</option>
+            <option value="cancel">❌ Cancel Job</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-preferred-tech-wrap" style="display:none"><label>Preferred Tech Name</label><input type="text" id="f-preferred-tech" placeholder="Tech name"/></div>
+        <div class="form-group" id="g-recall-tech-wrap" style="display:none"><label>Last Tech on Site</label><input type="text" id="f-recall-tech" placeholder="Tech name"/></div>
+      </div>
+      <!-- DISPATCH ALERTS (gate, ladder, filter) -->
+      <div class="form-grid" style="margin-top:12px">
+        <div class="form-group">
+          <label>Gate Code Required?</label>
+          <select id="f-gate" onchange="handleGate()">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-gate-code-wrap" style="display:none"><label>Gate Code</label><input type="text" id="f-gate-code" placeholder="Gate code"/></div>
+        <div class="form-group">
+          <label>Ladder Required?</label>
+          <select id="f-ladder" onchange="handleLadder()">
+            <option value="no">No</option>
+            <option value="yes_standard">Yes — Standard (6ft)</option>
+            <option value="20">Yes — 20ft (send 2 techs)</option>
+            <option value="25">Yes — 25ft (send 2 techs)</option>
+            <option value="30">Yes — 30ft (send 2 techs)</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-filter-field">
+          <label>Filter Change?</label>
+          <select id="f-filter">
+            <option value="no">Not needed</option>
+            <option value="tech">Tech to provide filter</option>
+            <option value="customer">Customer has filter</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-filter-size-wrap"><label>Filter Size(s)</label><input type="text" id="f-filter-size" placeholder="e.g. 16x25x2, 20x20x2"/></div>
+      </div>
+    </div>
+    <!-- COMMERCIAL FIELDS -->
+    <div id="g-commercial-fields" class="intake-card" style="display:none">
+      <div class="section-label">Commercial Call Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Unit Type</label>
+          <select id="f-unit-type" onchange="handleUnitTypeChange()">
+            <option value="">— Select —</option>
+            <option value="rtu">RTU — Rooftop Unit</option>
+            <option value="minisplit">Mini Split / Ductless</option>
+            <option value="package">Package Unit</option>
+            <option value="pdu">PDU — Power Distribution Unit</option>
+            <option value="vrv">VRV / VRF System</option>
+            <option value="ahu">AHU — Air Handler Unit</option>
+            <option value="chiller">Chiller</option>
+            <option value="refrigeration">Refrigeration</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reason for Call</label>
+          <select id="f-comm-reason" onchange="updateCommProblemFields()">
+            <option value="">— Select —</option>
+            <option value="no_cool">No Cool / No Heat</option>
+            <option value="maintenance_pm">Scheduled PM / Maintenance</option>
+            <option value="inspection">Inspection</option>
+            <option value="repair">Repair</option>
+            <option value="refrigerant">Refrigerant Issue</option>
+            <option value="electrical">Electrical / Controls Issue</option>
+            <option value="noise">Unusual Noise</option>
+            <option value="emergency">Emergency — Business Down</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Business Impact Level</label>
+          <select id="f-impact" onchange="scoreCommercialLive()">
+            <option value="">— Select —</option>
+            <option value="emergency">🚨 Emergency — Business Down / Revenue Loss</option>
+            <option value="high">🔴 High — Significant disruption</option>
+            <option value="medium">🟡 Medium — Partial disruption</option>
+            <option value="low">🟢 Low — Minor issue / Scheduled PM</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-num-units-wrap">
+          <label id="f-num-units-label"># of RTUs</label>
+          <select id="f-num-units">
+            <option value="">— Select —</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6-10">6–10</option>
+            <option value="10+">10+</option>
+          </select>
+        </div>
+        <div id="g-problem-unit-fields" class="form-group full" style="display:none">
+          <label>Problem Area / Unit Location</label>
+          <div class="grid-2">
+            <input type="text" id="f-problem-area" placeholder="Area (e.g. East wing, Suite 204)"/>
+            <input type="text" id="f-which-unit" placeholder="Unit # or identifier"/>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Filter Sizes at This Location <span style="color:var(--accent3);font-size:0.6rem">(saves to account)</span></label>
+          <textarea id="f-comm-filter-sizes" placeholder="e.g. 16x25x2 ×8, 20x20x2 ×32, 20x25x2 ×42" style="min-height:60px"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Issue Description / Notes <span style="color:var(--accent3);font-size:0.6rem">(saves to account)</span></label>
+          <textarea id="f-comm-notes" placeholder="Equipment details, access info, special instructions..."></textarea>
+        </div>
+        <div id="g-comm-emergency" style="display:none;grid-column:1/-1">
+          <div style="padding:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.3);border-radius:6px;font-size:0.82rem;color:var(--danger)">🚨 EMERGENCY DISPATCH — Notify service manager immediately. Dispatch highest available opportunity tech.</div>
+        </div>
+      </div>
+    </div>
+    <!-- PROPERTY MANAGER FIELDS — only when caller_type = property_manager -->
+    <div id="g-pm-fields" class="intake-card" style="display:none">
+      <div class="section-label">Property Manager Intake</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Property Owner's Name</label><input type="text" id="f-pm-owner-name" placeholder="Owner's full name"/></div>
+        <div class="form-group"><label>Phone #</label><input type="text" id="f-pm-phone" placeholder="(555) 000-0000"/></div>
+        <div class="form-group full"><label>Email <span style="color:var(--muted);font-size:0.6rem">(quotes &amp; invoices)</span></label><input type="email" id="f-pm-email" placeholder="owner@email.com"/></div>
+        <div class="form-group full"><label>Service Address</label><input type="text" id="f-pm-address" placeholder="Property address"/></div>
+        <div class="form-group">
+          <label>Reason for Call</label>
+          <select id="f-pm-reason">
+            <option value="">— Select —</option>
+            <option value="no_cool_heat">No Cool / No Heat</option>
+            <option value="maintenance">Maintenance / PM</option>
+            <option value="repair">General Repair</option>
+            <option value="frozen_unit">Unit Frozen</option>
+            <option value="noise">Unusual Noise</option>
+            <option value="not_turning_on">Not Turning On</option>
+            <option value="drain_leak">Water / Drain Issue</option>
+            <option value="inspection">Inspection</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Gate Code</label>
+          <input type="text" id="f-pm-gate-code" placeholder="Gate code (if applicable)"/>
+        </div>
+        <div class="form-group">
+          <label>Ladder Required?</label>
+          <select id="f-pm-ladder">
+            <option value="no">No</option>
+            <option value="yes_standard">Yes — Standard</option>
+            <option value="20">Yes — 20ft</option>
+            <option value="25">Yes — 25ft</option>
+            <option value="30">Yes — 30ft</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Location of the Issue</label><input type="text" id="f-pm-location" placeholder="e.g. Master bedroom unit, Rooftop unit 3"/></div>
+      </div>
+    </div>
+    <!-- MARKETING SOURCE — not shown for returning customers -->
+    <div class="intake-card" id="g-marketing-section">
+      <div class="section-label">Marketing &amp; Source</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>How Did They Hear About Us?</label>
+          <select id="f-marketing" onchange="handleMarketing()">
+            <option value="">— Select —</option>
+            <option value="google">Google Search</option>
+            <option value="referral">Referral — Word of Mouth</option>
+            <option value="repeat">Repeat Customer</option>
+            <option value="social">Social Media</option>
+            <option value="door_hanger">Door Hanger</option>
+            <option value="yard_sign">Yard Sign</option>
+            <option value="nextdoor">Nextdoor</option>
+            <option value="yelp">Yelp</option>
+            <option value="homeadvisor">HomeAdvisor / Angi</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" id="g-csr-notes-field">
+          <label>CSR Notes <span style="color:var(--muted);font-size:0.6rem">(for dispatcher &amp; office)</span></label>
+          <textarea id="f-csr-notes" placeholder="Anything dispatcher needs to know — customer mood, special requests, notes from call..." style="min-height:60px"></textarea>
+        </div>
+      </div>
+    </div>
+    <!-- SCORE BUTTON -->
+    <div style="text-align:center;margin:20px 0">
+      <button class="btn btn-primary" style="font-size:0.9rem;padding:14px 40px;letter-spacing:3px" onclick="scoreCall()">⚡ Score &amp; Assign Call</button>
+    </div>
+    <!-- SCORE RESULT -->
+    <div id="score-result" class="score-result">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:2px;color:var(--muted);margin-bottom:4px">GOD'S PLAN SCORE</div>
+          <div class="score-num" id="score-num">0</div>
+        </div>
+        <div style="text-align:right;flex:1;padding-left:20px">
+          <div class="score-tech" id="score-tech-assign"></div>
+          <div class="score-routing" id="score-routing-note"></div>
+        </div>
+      </div>
+      <div id="score-reasons" style="margin-bottom:10px"></div>
+      <div id="score-alerts"></div>
+      <!-- SCHEDULING -->
+      <div id="g-scheduling-section" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div class="section-label" style="margin-bottom:12px">Schedule This Call</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Scheduled Date</label>
+            <input type="date" id="f-sched-date" onchange="updateSchedSlots()"/>
+          </div>
+          <div class="form-group">
+            <label>Preferred Window</label>
+            <select id="f-sched-window" onchange="updateSchedSlots()">
+              <option value="">— Select window —</option>
+              <option value="all_day">📅 All Day</option>
+              <option value="morning">🌅 Morning (8am–12pm)</option>
+              <option value="afternoon">☀️ Afternoon (12pm–5pm)</option>
+              <option value="evening">🌆 Evening (4–6pm)</option>
+              <option value="after_hours">⚡ After Hours (6pm+)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Time Slot</label>
+            <select id="f-sched-slot">
+              <option value="">— Select slot —</option>
+              <option value="8-10">8:00am – 10:00am</option>
+              <option value="10-12">10:00am – 12:00pm</option>
+              <option value="12-2">12:00pm – 2:00pm</option>
+              <option value="2-4">2:00pm – 4:00pm</option>
+              <option value="4-6">4:00pm – 6:00pm</option>
+              <option value="6-8">6:00pm – 8:00pm</option>
+              <option value="8-10pm">8:00pm – 10:00pm</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- TECH ASSIGNMENT -->
+      <div id="g-tech-assign-section" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div class="section-label" style="margin-bottom:12px">Assign Tech</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Primary Tech</label>
+            <select id="f-assign-tech">
+              <option value="">— Select tech —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Secondary Tech (if needed)</label>
+            <select id="f-assign-tech-2">
+              <option value="">— None —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Est. Duration</label>
+            <select id="f-job-duration">
+              <option value="">— Select —</option>
+              <option value="1hr">1 Hour</option>
+              <option value="2hr">2 Hours</option>
+              <option value="3hr">3 Hours</option>
+              <option value="4hr">4 Hours</option>
+              <option value="half_day">Half Day (4–5 hrs)</option>
+              <option value="full_day">Full Day (6+ hrs)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Job Type</label>
+            <select id="f-job-subtype" onchange="handleJobSubtype()">
+              <option value="">— Standard Call —</option>
+              <option value="multi_system_maint">🏢 Multi-System Maint.</option>
+              <option value="rec_work">🔁 Rec-Work (Return Visit)</option>
+              <option value="return_part">🔧 Return — Part Install</option>
+              <option value="return_followup">📋 Return — Follow-Up</option>
+              <option value="new_install">🆕 New Install</option>
+              <option value="warranty_call">🏠 Warranty Call</option>
+            </select>
+          </div>
+          <!-- REC-WORK LINKED JOB # — shown only when job_subtype = rec_work -->
+          <div id="g-rec-work-link" style="display:none;grid-column:1/-1">
+            <div style="padding:10px 12px;background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.3);border-radius:6px">
+              <label style="color:var(--accent)">⚡ Rec-Work — Linked Original Job #</label>
+              <input type="text" id="f-rec-work-job-id" placeholder="Original job # (e.g. 3149)" style="margin-top:6px;border-color:rgba(249,115,22,0.4)"/>
+              <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Links this return visit to the original diagnostic job.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- SAVE BAR -->
+  <div id="rod-save-bar" style="display:none;position:sticky;bottom:0;z-index:100;padding:14px 20px;background:rgba(8,12,16,0.97);border-top:1px solid var(--border);border-radius:0 0 8px 8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <button class="btn btn-primary" style="font-size:0.85rem;padding:12px 32px;letter-spacing:2px" onclick="rodSaveCall()">✓ Save &amp; Log Call to Cloud Database</button>
+    <div id="save-indicator" style="font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--muted);display:none">Saving...</div>
+  </div>
+</div>
+<!-- ═══════════════════════════════════════════════════
+     SECTION 2: DISPATCH BOARD & SCHEDULE
+═══════════════════════════════════════════════════ -->
+<div id="view-dispatch" class="view">
+  <!-- OPEN SLOT ALERT (shows after cancellation) -->
+  <div id="open-slot-alert" style="display:none;margin-bottom:16px;padding:12px 16px;background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.3);border-radius:8px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:1.2rem">⚡</span>
+    <div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--accent)">OPEN SLOT ALERT — REVENUE RECOVERY</div>
+      <div style="font-size:0.8rem;color:var(--text);margin-top:2px">A cancelled job opened a slot. Review the board for the next highest-scored pending call.</div>
+    </div>
+  </div>
+  <!-- BOARD NAV -->
+  <div class="board-nav">
+    <button class="board-nav-btn" onclick="schedNav(-1)">◀</button>
+    <div class="board-date-label" id="sched-range-label">Loading...</div>
+    <button class="board-nav-btn" onclick="schedNav(1)">▶</button>
+    <button class="board-nav-btn today-btn" onclick="schedGoToday()">TODAY</button>
+    <button class="board-nav-btn" id="btn-sched-week" onclick="setSchedView('week')">WEEK</button>
+    <button class="board-nav-btn" id="btn-sched-day" onclick="setSchedView('day')">DAY</button>
+  </div>
+  <!-- WEEK VIEW -->
+  <div id="sched-week-view" style="display:none">
+    <div id="sched-week-grid" class="week-grid"></div>
+    <!-- UNSCHEDULED JOBS PANEL — NULL scheduled_date jobs -->
+    <div id="sched-unscheduled-panel" style="display:none;margin-top:16px">
+      <div style="padding:14px 16px;background:rgba(234,179,8,0.05);border:1px solid rgba(234,179,8,0.3);border-radius:8px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--warn);margin-bottom:10px">📋 NEEDS DATE ASSIGNED — CLICK TO SCHEDULE</div>
+        <div id="sched-unscheduled-cards" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+  </div>
+  <!-- DAY VIEW -->
+  <div id="sched-day-view" style="display:none">
+    <div id="sched-day-header" style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;letter-spacing:2px;color:var(--muted);margin-bottom:12px"></div>
+    <div class="day-grid-wrap">
+      <div id="sched-day-grid"></div>
+    </div>
+    <!-- UNSCHEDULED PANEL IN DAY VIEW -->
+    <div id="day-unscheduled-panel" style="display:none;margin-top:12px">
+      <div style="padding:14px 16px;background:rgba(234,179,8,0.05);border:1px solid rgba(234,179,8,0.3);border-radius:8px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--warn);margin-bottom:10px">📋 NEEDS DATE ASSIGNED — CLICK TO SCHEDULE</div>
+        <div id="day-unscheduled-cards" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+    <!-- NO SLOT PANEL -->
+    <div id="day-noslot-panel" style="display:none;margin-top:8px">
+      <div style="padding:12px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--warn);margin-bottom:8px">⚠ NO TIME SLOT — DISPATCHER ACTION NEEDED</div>
+        <div id="day-noslot-cards" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+    <!-- UNASSIGNED (no tech) PANEL -->
+    <div id="day-unassigned-panel" style="display:none;margin-top:8px">
+      <div style="padding:12px 14px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.25);border-radius:8px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:2px;color:var(--danger);margin-bottom:8px">🚨 UNASSIGNED — NO TECH SET</div>
+        <div id="day-unassigned-cards" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ═══════════════════════════════════════════════════
+     SECTION 3: CUSTOMER DATABASE
+═══════════════════════════════════════════════════ -->
+<div id="view-customers" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px">Customer Database</div>
+    <input type="text" id="cust-search" placeholder="Search name or phone..." style="max-width:280px" oninput="rodRenderDB()"/>
+  </div>
+  <div class="panel">
+    <div class="panel-body" style="padding:0">
+      <table class="cust-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Equip Age</th>
+            <th>Member</th>
+            <th>Calls</th>
+            <th>Last Seen</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="cust-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- ═══════════════════════════════════════════════════
+     SECTION 4: REPORTS
+═══════════════════════════════════════════════════ -->
+<div id="view-reports" class="view">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;margin-bottom:20px">Reports</div>
+  <div class="report-period-btns">
+    <button class="btn btn-primary btn-sm" onclick="loadReports('today')">Today</button>
+    <button class="btn btn-outline btn-sm" onclick="loadReports('week')">This Week</button>
+    <button class="btn btn-outline btn-sm" onclick="loadReports('month')">This Month</button>
+    <button class="btn btn-outline btn-sm" onclick="loadReports('ytd')">YTD</button>
+  </div>
+  <div id="reports-content"></div>
+</div>
+<!-- ═══════════════════════════════════════════════════
+     SECTION 5: TECH MOBILE PORTAL
+═══════════════════════════════════════════════════ -->
+<div id="view-tech" class="view">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;margin-bottom:20px">Tech Mobile Portal</div>
+  <div id="tech-selector-wrap"></div>
+  <div id="tech-portal-body"></div>
+</div>
+<!-- ═══════════════════════════════════════════════════
+     SECTION 6: TECH MANAGEMENT
+═══════════════════════════════════════════════════ -->
+<div id="view-techmgmt" class="view">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;margin-bottom:20px">Tech Management</div>
+  <div class="grid-2">
+    <div>
+      <div class="section-label">Active Roster</div>
+      <div id="tech-roster-list"></div>
+      <button class="btn btn-outline btn-sm" onclick="toggleAddTechForm()" style="margin-top:12px">+ Add Tech</button>
+      <div id="add-tech-form" style="display:none;margin-top:12px;padding:16px;background:var(--panel);border:1px solid var(--border);border-radius:8px">
+        <div class="form-grid">
+          <div class="form-group"><label>Name</label><input type="text" id="new-tech-name" placeholder="Tech full name"/></div>
+          <div class="form-group"><label>Phone</label><input type="text" id="new-tech-phone" placeholder="Phone number"/></div>
+          <div class="form-group">
+            <label>Tier</label>
+            <select id="new-tech-tier">
+              <option value="opportunity">Opportunity</option>
+              <option value="service">Service / Repair</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="qa">QA</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="new-tech-status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="form-group full"><label>Skills / Account Tags</label><input type="text" id="new-tech-skills" placeholder="e.g. EOS Fitness Dallas, RTU Specialist"/></div>
+          <div class="form-group full" style="flex-direction:row;align-items:center;gap:8px">
+            <input type="checkbox" id="new-tech-proving" style="width:16px;height:16px"/>
+            <label style="text-transform:none;font-size:0.8rem;letter-spacing:0">Proving Period Active</label>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addTech()" style="margin-top:10px">Save Tech</button>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Override Log</div>
+      <div id="override-log-list" style="max-height:300px;overflow-y:auto"></div>
+      <div class="section-label" style="margin-top:16px">Dispatcher Override Log</div>
+      <div id="dispatcher-override-log-list" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+<!-- ═══════════════════════════════════════════════════
+     SECTION 7: ADMIN PANEL
+═══════════════════════════════════════════════════ -->
+<div id="view-admin" class="view">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;margin-bottom:20px">Admin Panel</div>
+  <div class="stats-row">
+    <div class="stat-card orange"><div class="stat-label">Total Calls</div><div class="stat-value" id="dash-calls">0</div></div>
+    <div class="stat-card blue"><div class="stat-label">Jobs Pending</div><div class="stat-value" id="dash-pending">0</div></div>
+    <div class="stat-card green"><div class="stat-label">Revenue Today</div><div class="stat-value" id="dash-rev">$0</div></div>
+    <div class="stat-card yellow"><div class="stat-label">Memberships</div><div class="stat-value" id="dash-members">0</div></div>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div class="section-label">Tech Status</div>
+      <div id="admin-tech-status"></div>
+    </div>
+    <div>
+      <div class="section-label">Live Feed</div>
+      <div id="admin-live-feed" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+  </div>
+  <div id="admin-panel-body" style="margin-top:20px"></div>
+</div>
+</main>
+<!-- TOAST -->
+<div id="rod-toast" class="rod-toast"></div>
+<!-- FOOTER -->
+<footer>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--muted);letter-spacing:2px">© 2026 REVENUE OPTIMIZATION DISPATCH LLC™ · JASON ORTEGA, FOUNDER & CEO · ALL RIGHTS RESERVED</span>
+</footer>
+<!-- ═══════════════════════════════════════════════════
+     JOB DETAIL MODAL
+═══════════════════════════════════════════════════ -->
+<div id="job-detail-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="jd-header-name">Job Detail</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px" id="jd-header-addr"></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:6px;flex-wrap:wrap">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;padding:3px 8px;background:rgba(255,255,255,0.06);border-radius:3px" id="jd-header-reason"></span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem" id="jd-header-score"></span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--accent2)" id="jd-header-tech"></span>
+        </div>
+        <div id="jd-header-csr-notes" style="display:none;margin-top:6px;font-size:0.75rem;color:var(--muted);padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:4px;border-left:2px solid var(--border)"></div>
+      </div>
+      <button class="modal-close" onclick="closeJobDetailModal()">✕</button>
+    </div>
+    <input type="hidden" id="jd-job-id"/>
+    <input type="hidden" id="jd-call-id"/>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="form-group">
+        <label>Job Status</label>
+        <select id="jd-status">
+          <option value="pending">⏳ Pending</option>
+          <option value="enroute">🚗 En Route</option>
+          <option value="arrived">📍 Arrived</option>
+          <option value="completed">✅ Completed</option>
+          <option value="cancelled">❌ Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Reassign Tech</label>
+        <select id="jd-tech-reassign"><option value="">— Keep Current —</option></select>
+      </div>
+      <div class="form-group">
+        <label>Secondary Tech</label>
+        <select id="jd-tech-2"><option value="">— None —</option></select>
+      </div>
+      <div class="form-group">
+        <label>Est. Duration</label>
+        <select id="jd-duration">
+          <option value="">— Select —</option>
+          <option value="1hr">1 Hour</option>
+          <option value="2hr">2 Hours</option>
+          <option value="3hr">3 Hours</option>
+          <option value="4hr">4 Hours</option>
+          <option value="half_day">Half Day</option>
+          <option value="full_day">Full Day (6+ hrs)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Outcome</label>
+        <select id="jd-outcome">
+          <option value="">— Select —</option>
+          <option value="repair_completed">Repair Completed</option>
+          <option value="maintenance_completed">Maintenance Completed</option>
+          <option value="quote_provided">Quote Provided</option>
+          <option value="replacement_sold">Replacement Sold</option>
+          <option value="membership_sold">Membership Sold</option>
+          <option value="no_issue_found">No Issue Found</option>
+          <option value="part_ordered">Part Ordered — Return Needed</option>
+          <option value="customer_declined">Customer Declined Service</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Call Type</label>
+        <select id="jd-call-type">
+          <option value="">— Select —</option>
+          <option value="service">Service Call</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="install">Installation</option>
+          <option value="warranty">Warranty</option>
+          <option value="quote">Quote</option>
+          <option value="rec_work">Rec-Work</option>
+        </select>
+      </div>
+    </div>
+    <!-- SCHEDULING IN MODAL -->
+    <div style="padding:12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:6px;margin-bottom:14px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:2px;color:var(--accent2);margin-bottom:8px">📅 SCHEDULED DATE</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Date</label><input type="date" id="jd-sched-date" onchange="updateJdSlots()"/></div>
+        <div class="form-group">
+          <label>Window</label>
+          <select id="jd-sched-window" onchange="updateJdSlots()">
+            <option value="">— Select —</option>
+            <option value="all_day">📅 All Day</option>
+            <option value="morning">🌅 Morning (8am–12pm)</option>
+            <option value="afternoon">☀️ Afternoon (12pm–5pm)</option>
+            <option value="evening">🌆 Evening (4–6pm)</option>
+            <option value="after_hours">⚡ After Hours</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time Slot</label>
+          <select id="jd-sched-slot">
+            <option value="">— Select —</option>
+            <option value="8-10">8:00am – 10:00am</option>
+            <option value="10-12">10:00am – 12:00pm</option>
+            <option value="12-2">12:00pm – 2:00pm</option>
+            <option value="2-4">2:00pm – 4:00pm</option>
+            <option value="4-6">4:00pm – 6:00pm</option>
+            <option value="6-8">6:00pm – 8:00pm</option>
+            <option value="8-10pm">8:00pm – 10:00pm</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <!-- REVENUE & MEMBERSHIP -->
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="form-group">
+        <label>Revenue Collected ($)</label>
+        <input type="number" id="jd-amount" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:6px;cursor:pointer;align-self:flex-end" onclick="var cb=document.getElementById('jd-membership');cb.checked=!cb.checked;if(cb.checked)rodToast('✅ Membership Sold — logged on this job!')">
+        <input type="checkbox" id="jd-membership" style="width:16px;height:16px;accent-color:var(--accent3);cursor:pointer" onclick="event.stopPropagation();if(this.checked)rodToast('✅ Membership Sold — logged on this job!')"/>
+        <label for="jd-membership" style="font-size:0.78rem;color:var(--accent3);cursor:pointer;margin:0;font-weight:600;font-family:'Share Tech Mono',monospace;letter-spacing:1px">Membership Sold</label>
+      </div>
+    </div>
+    <!-- REC-WORK LINKED JOB in modal -->
+    <div id="jd-rec-work-wrap" style="display:none;margin-bottom:14px;padding:10px 12px;background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.3);border-radius:6px">
+      <label style="color:var(--accent)">⚡ Rec-Work — Linked Original Job #</label>
+      <input type="text" id="jd-rec-work-job-id" placeholder="Original Job # (e.g. 3149)" style="margin-top:6px;border-color:rgba(249,115,22,0.4)"/>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>What Was Found / Done</label>
+      <textarea id="jd-work-done" placeholder="e.g. Dirty coil, low refrigerant. Cleaned and recharged. Customer approved." style="min-height:70px"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label>Notes (Customer / Dispatcher)</label>
+      <input type="text" id="jd-csr-notes" placeholder="Any additional context..."/>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveJobDetail()">✓ Save</button>
+      <button class="btn btn-outline" onclick="closeJobDetailModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- EDIT CUSTOMER MODAL -->
+<div id="edit-customer-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Edit Customer</div>
+      <button class="modal-close" onclick="document.getElementById('edit-customer-modal').style.display='none'">✕</button>
+    </div>
+    <input type="hidden" id="edit-cust-id"/>
+    <div class="form-grid">
+      <div class="form-group"><label>Name</label><input type="text" id="edit-cust-name"/></div>
+      <div class="form-group"><label>Phone</label><input type="text" id="edit-cust-phone"/></div>
+      <div class="form-group full"><label>Address</label><input type="text" id="edit-cust-address"/></div>
+      <div class="form-group full"><label>Email</label><input type="email" id="edit-cust-email"/></div>
+      <div class="form-group"><label>Equip Age</label><select id="edit-cust-equip-age"><option value="">—</option><option value="0-2">0–2 yrs</option><option value="3-8">3–8 yrs</option><option value="9-14">9–14 yrs</option><option value="15+">15+ yrs</option><option value="unknown">Unknown</option></select></div>
+      <div class="form-group"><label>Member?</label><select id="edit-cust-member"><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+      <div class="form-group full"><label>Filter Sizes</label><textarea id="edit-cust-filter-sizes" placeholder="e.g. 16x25x2 ×8, 20x20x2 ×32" style="min-height:50px"></textarea></div>
+      <div class="form-group full"><label>Account Notes</label><textarea id="edit-cust-notes" placeholder="Persistent notes about this account..." style="min-height:50px"></textarea></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveEditCustomer()">Save Changes</button>
+      <button class="btn btn-outline" onclick="document.getElementById('edit-customer-modal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- RUNNING LATE MODAL -->
+<div id="running-late-modal" class="modal-overlay">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">Running Late</div>
+      <button class="modal-close" onclick="document.getElementById('running-late-modal').style.display='none'">✕</button>
+    </div>
+    <div id="running-late-body">
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Tech</label>
+        <select id="rl-tech-select"></select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Delay (minutes)</label>
+        <select id="rl-delay">
+          <option value="15">15 minutes</option>
+          <option value="30">30 minutes</option>
+          <option value="45">45 minutes</option>
+          <option value="60">60 minutes</option>
+          <option value="90">90 minutes</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:18px">
+        <label>Reason</label>
+        <input type="text" id="rl-reason" placeholder="Traffic, previous job ran long..."/>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" style="flex:1;background:var(--warn);color:#000" onclick="saveRunningLate()">🕐 Log Delay</button>
+        <button class="btn btn-outline" onclick="document.getElementById('running-late-modal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- DISPATCHER OVERRIDE MODAL -->
+<div id="dispatcher-override-modal" class="modal-overlay">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title">Dispatcher Override</div>
+      <button class="modal-close" onclick="document.getElementById('dispatcher-override-modal').style.display='none'">✕</button>
+    </div>
+    <div id="dispatcher-override-body">
+      <div style="padding:10px 12px;background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-radius:6px;margin-bottom:14px;font-size:0.8rem;color:var(--warn)">You are overriding R.O.D.'s recommendation. This will be logged for reporting.</div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>R.O.D. Recommended</label>
+        <input type="text" id="do-rod-rec" readonly style="color:var(--muted)"/>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Your Choice</label>
+        <input type="text" id="do-choice" placeholder="Tech you're assigning"/>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Reason for Override</label>
+        <select id="do-reason" onchange="document.getElementById('do-other-wrap').style.display=this.value==='other'?'block':'none'">
+          <option value="">— Select reason —</option>
+          <option value="customer_request">Customer requested this tech</option>
+          <option value="skill_match">Better skill match for this job</option>
+          <option value="capacity">Recommended tech at capacity</option>
+          <option value="emergency_reshuffle">Emergency reshuffle</option>
+          <option value="manager_directive">Service manager directive</option>
+          <option value="other">Other — explain below</option>
+        </select>
+      </div>
+      <div class="form-group" id="do-other-wrap" style="display:none;margin-bottom:14px"><label>Explain</label><textarea id="do-other-text" placeholder="Explanation..."></textarea></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" style="flex:1;background:var(--accent2)" onclick="confirmDispatcherOverride()">Confirm Override</button>
+        <button class="btn btn-outline" onclick="document.getElementById('dispatcher-override-modal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- end #app -->
+<script>
+// ═══════════════════════════════════════════════════
+// CONSTANTS & GLOBALS
+// ═══════════════════════════════════════════════════
+var SUPABASE_URL='https://yfwqslndapntkgxsndyd.supabase.co';
+var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlmd3FzbG5kYXBudGtneHNuZHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjczNjIsImV4cCI6MjA5NDMwMzM2Mn0.ZeP-lVgoayL7TcE8xp2LcNZ9tq7JJ9hnm1Y41zMKSjo';
+var sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+var SUPABASE_SERVICE_KEY='sb_secret_oPVdl2qb9KAxPD894Avscg_g_BP-ETa';
+var sbAdmin=supabase.createClient(SUPABASE_URL,SUPABASE_SERVICE_KEY,{auth:{storageKey:'sb-admin-token',autoRefreshToken:false,persistSession:false}});
+var MASTER_EMAIL='jayort1019@gmail.com';
+var currentUser=null,currentClientId=null,currentMode='residential',currentUserRole='manager';
+var emgTechRoster=[],currentOverrideTechId=null,currentDispatchOverride=null;
+var adminLiveFeedTimer=null;
+var schedViewMode='week',schedCurrentDate=new Date();
+var currentReturnCustomerId=null;
+
+var TIER_COLORS={opportunity:'var(--accent)',service:'var(--accent2)',maintenance:'var(--accent3)',qa:'var(--qa)'};
+var SLOT_LABELS={
+  '8-10':'8:00am–10:00am','10-12':'10:00am–12:00pm','12-2':'12:00pm–2:00pm',
+  '2-4':'2:00pm–4:00pm','4-6':'4:00pm–6:00pm','6-8':'6:00pm–8:00pm','8-10pm':'8:00pm–10:00pm',
+  'all_day':'All Day'
+};
+var DAY_SLOTS=['8-10','10-12','12-2','2-4','4-6','6-8','8-10pm'];
+
+// ═══════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════
+sb.auth.getSession().then(function(r){if(r.data&&r.data.session){currentUser=r.data.session.user;loadUserProfile();}});
+sb.auth.onAuthStateChange(function(event,session){
+  if(event==='SIGNED_IN'&&session){currentUser=session.user;loadUserProfile();}
+  else if(event==='SIGNED_OUT'){currentUser=null;currentClientId=null;document.getElementById('app').style.display='none';showLogin();}
+});
+function showLogin(){document.getElementById('login-screen').style.display='flex';document.getElementById('register-screen').style.display='none';}
+function showRegister(){document.getElementById('login-screen').style.display='none';document.getElementById('register-screen').style.display='flex';}
+function doLogin(){
+  var email=document.getElementById('login-email').value.trim(),pass=document.getElementById('login-password').value;
+  var errEl=document.getElementById('login-error'),loadEl=document.getElementById('login-loading');
+  errEl.style.display='none';loadEl.style.display='block';
+  sb.auth.signInWithPassword({email:email,password:pass}).then(function(r){loadEl.style.display='none';if(r.error){errEl.textContent=r.error.message;errEl.style.display='block';}});
+}
+function doRegister(){
+  var company=document.getElementById('reg-company').value.trim(),name=document.getElementById('reg-name').value.trim();
+  var email=document.getElementById('reg-email').value.trim(),pass=document.getElementById('reg-password').value;
+  var errEl=document.getElementById('reg-error'),loadEl=document.getElementById('reg-loading');
+  if(!company||!name||!email||!pass){errEl.textContent='All fields required.';errEl.style.display='block';return;}
+  errEl.style.display='none';loadEl.style.display='block';
+  sb.auth.signUp({email:email,password:pass}).then(function(r){
+    loadEl.style.display='none';
+    if(r.error){errEl.textContent=r.error.message;errEl.style.display='block';return;}
+    sb.from('clients').insert([{company_name:company,email:email}]).select().then(function(cr){
+      if(cr.data&&cr.data[0]){
+        sb.from('users').insert([{id:r.data.user.id,client_id:cr.data[0].id,full_name:name,email:email,role:'manager'}]).then(function(){rodToast('Account created! Check email to confirm.');showLogin();});
+      }
+    });
+  });
+}
+function doLogout(){sb.auth.signOut();}
+function loadUserProfile(){
+  sb.from('users').select('*,clients(company_name)').eq('id',currentUser.id).single().then(function(r){
+    if(r.data&&r.data.client_id){
+      currentClientId=r.data.client_id;
+      currentUserRole=r.data.role||'manager';
+      if(!r.data.role)sb.from('users').update({role:'manager'}).eq('id',currentUser.id).then(function(){});
+      var co=r.data.clients?r.data.clients.company_name:'R.O.D.';
+      document.getElementById('header-company').textContent=co;
+      if(currentUser.email===MASTER_EMAIL){document.getElementById('header-name').textContent=r.data.full_name||currentUser.email;document.getElementById('header-name').style.display='block';}
+      else{document.getElementById('header-name').style.display='none';}
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('register-screen').style.display='none';
+      document.getElementById('app').style.display='block';
+      var cd=document.getElementById('f-call-date');if(cd)cd.value=toDateStr(new Date());
+      applyRoleTabs(currentUserRole);showRoleBadge(currentUserRole);
+      loadDashboardCount();checkAdmin();loadTechRosterForScoring();
+    } else {
+      sb.from('clients').insert([{company_name:'My Company',email:currentUser.email}]).select().then(function(cr){
+        if(cr.data&&cr.data[0]){
+          currentClientId=cr.data[0].id;currentUserRole='manager';
+          sb.from('users').upsert([{id:currentUser.id,client_id:cr.data[0].id,email:currentUser.email,role:'manager'}]).then(function(){});
+          document.getElementById('header-name').textContent=currentUser.email;
+          document.getElementById('header-company').textContent='My Company';
+          document.getElementById('login-screen').style.display='none';
+          document.getElementById('register-screen').style.display='none';
+          document.getElementById('app').style.display='block';
+          var cd=document.getElementById('f-call-date');if(cd)cd.value=toDateStr(new Date());
+          showRoleBadge('manager');applyRoleTabs('manager');loadDashboardCount();
+        }
+      });
+    }
+  });
+}
+function showRoleBadge(role){
+  var b=document.getElementById('header-role-badge');if(!b)return;
+  var labels={csr:'CSR',csr_dispatcher:'CSR / DISPATCHER',dispatcher:'DISPATCHER',manager:'MANAGER',admin:'ADMIN'};
+  b.textContent=labels[role]||role.toUpperCase();
+}
+function applyRoleTabs(role){
+  // All users see: intake, dispatch, customers, reports, tech (portal)
+  // CSR only: no dispatch tab
+  var isCsr=role==='csr';
+  var isDispatcher=role==='dispatcher'||role==='csr_dispatcher'||role==='manager'||role==='admin';
+  var isMgr=role==='manager'||role==='admin';
+  var t=document.getElementById('tab-dispatch');if(t)t.style.display=isDispatcher?'':'none';
+  var tm=document.getElementById('tab-techmgmt');if(tm)tm.style.display=isMgr?'':'none';
+  var ta=document.getElementById('tab-admin');if(ta)ta.style.display=(role==='admin'||currentUser.email===MASTER_EMAIL)?'':'none';
+  // Tech assignment in intake hidden for pure CSR
+  var tas=document.getElementById('g-tech-assign-section');if(tas)tas.style.display=isCsr?'none':'';
+}
+function checkAdmin(){
+  isAdmin=(currentUser&&currentUser.email===MASTER_EMAIL)||currentUserRole==='admin';
+  var ta=document.getElementById('tab-admin');if(ta)ta.style.display=isAdmin?'':'none';
+}
+
+// ═══════════════════════════════════════════════════
+// TAB NAVIGATION
+// ═══════════════════════════════════════════════════
+function showTab(name){
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  var view=document.getElementById('view-'+name);
+  var tab=document.getElementById('tab-'+name);
+  if(view)view.classList.add('active');
+  if(tab)tab.classList.add('active');
+  if(name==='customers')rodRenderDB();
+  if(name==='reports')loadReports('month');
+  if(name==='admin'){loadDashboardCount();loadAdminPanel();loadAdminLiveFeed();}
+  if(name==='tech')loadTechPortal();
+  if(name==='techmgmt'){loadTechRoster();loadOverrideLog();loadDispatcherOverrideLog();}
+  if(name==='dispatch'){setSchedView('week');loadSchedule();}
+}
+
+// ═══════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════
+function rodToast(msg,type){
+  var t=document.getElementById('rod-toast');if(!t)return;
+  t.textContent=msg;t.className='rod-toast'+(type?' '+type:'');
+  setTimeout(function(){t.classList.add('show');},10);
+  setTimeout(function(){t.classList.remove('show');},3800);
+}
+
+// ═══════════════════════════════════════════════════
+// DATE UTILITIES
+// ═══════════════════════════════════════════════════
+function toDateStr(d){
+  if(!d)d=new Date();
+  return d.getFullYear()+'-'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'-'+(d.getDate()<10?'0':'')+d.getDate();
+}
+function getWeekStart(d){
+  var day=d.getDay(); // 0=Sun
+  var diff=day===0?-6:1-day; // Mon=start
+  var ws=new Date(d);ws.setDate(d.getDate()+diff);return ws;
+}
+
+// ═══════════════════════════════════════════════════
+// ADDRESS LOOKUP & RETURNING CUSTOMER
+// ═══════════════════════════════════════════════════
+var _lookupTimer=null;
+function rodAddressLookup(val){
+  clearTimeout(_lookupTimer);
+  var dd=document.getElementById('lookup-addr-dropdown');
+  if(!val||val.length<4){if(dd)dd.classList.remove('show');return;}
+  _lookupTimer=setTimeout(function(){rodDoAddressSearch(val);},300);
+}
+function rodDoAddressSearch(val){
+  if(!currentClientId)return;
+  var norm=val.toLowerCase().replace(/[^a-z0-9\s]/g,'');
+  sb.from('customers').select('id,name,phone,address,equip_age,member,last_seen,filter_sizes,num_systems,marketing_source,mode,email').eq('client_id',currentClientId).ilike('address','%'+val+'%').limit(8).then(function(r){
+    var dd=document.getElementById('lookup-addr-dropdown');
+    if(!dd)return;
+    if(!r.data||!r.data.length){dd.classList.remove('show');return;}
+    dd.innerHTML=r.data.map(function(c){
+      return'<div class="lookup-item" onclick="rodSelectCustomer(\''+c.id+'\')">'+
+        '<div class="lookup-item-name">'+(c.name||'Unknown')+'</div>'+
+        '<div class="lookup-item-meta">'+(c.address||'')+' · Last: '+(c.last_seen||'Never')+(c.member==='yes'?' · ✓ Member':'')+'</div>'+
+      '</div>';
+    }).join('');
+    dd.classList.add('show');
+  });
+}
+function rodSelectCustomer(custId){
+  var dd=document.getElementById('lookup-addr-dropdown');if(dd)dd.classList.remove('show');
+  sb.from('customers').select('*').eq('id',custId).single().then(function(r){
+    if(!r.data)return;
+    var c=r.data;
+    currentReturnCustomerId=custId;
+    // Fill form fields
+    if(c.address)document.getElementById('f-address').value=c.address;
+    if(c.name)document.getElementById('f-name').value=c.name;
+    if(c.phone)document.getElementById('f-phone').value=c.phone;
+    if(c.email)document.getElementById('f-email').value=c.email;
+    if(c.equip_age)document.getElementById('f-equip-age').value=c.equip_age;
+    if(c.member)document.getElementById('f-member').value=c.member;
+    if(c.filter_sizes)document.getElementById('f-filter-size').value=c.filter_sizes;
+    if(c.filter_sizes&&document.getElementById('f-comm-filter-sizes'))document.getElementById('f-comm-filter-sizes').value=c.filter_sizes;
+    // Show returning banner
+    var banner=document.getElementById('g-returning-banner');
+    if(banner){
+      banner.style.display='block';
+      document.getElementById('ret-cust-name').textContent=c.name||'Returning Customer';
+      var meta=[];
+      if(c.equip_age)meta.push('Equip: '+c.equip_age+' yrs');
+      if(c.member==='yes')meta.push('✓ Active Member');
+      if(c.last_seen)meta.push('Last seen: '+c.last_seen);
+      if(c.filter_sizes)meta.push('Filters: '+c.filter_sizes);
+      document.getElementById('ret-cust-meta').textContent=meta.join(' · ');
+    }
+    // Show main form
+    document.getElementById('g-main-form').style.display='block';
+    // Marketing source — already on file, hide the section for returning customers
+    var mktSection=document.getElementById('g-marketing-section');
+    if(mktSection&&c.marketing_source){
+      mktSection.style.display='none'; // already know how they found us
+    }
+    // Mode
+    if(c.mode)setMode(c.mode);
+    // Show membership toast if active member
+    if(c.member==='yes'){rodToast('✅ ACTIVE MEMBER — Say: "Our records show you have an active membership. Thank you for allowing us to serve you."');}
+    rodToast('Returning customer loaded — '+(c.name||'Unknown'));
+  });
+}
+function clearReturnCustomer(){
+  currentReturnCustomerId=null;
+  document.getElementById('g-returning-banner').style.display='none';
+  document.getElementById('f-address').value='';
+}
+
+// ═══════════════════════════════════════════════════
+// MODE SWITCHING
+// ═══════════════════════════════════════════════════
+function setMode(mode){
+  currentMode=mode;var isComm=mode==='commercial';
+  var callerType=(document.getElementById('f-caller-type')||{}).value||'';
+  var isPM=callerType==='property_manager';
+  document.getElementById('g-commercial-fields').style.display=isComm?'block':'none';
+  document.getElementById('g-residential-fields').style.display=(isComm||isPM)?'none':'block';
+  document.getElementById('g-res-reason-wrap').style.display=(isComm||isPM)?'none':'block';
+  document.getElementById('g-member-field').style.display=(isComm||isPM)?'none':'block';
+  document.getElementById('g-marketing-section').style.display=isPM?'none':'block';
+  document.getElementById('intake-title').textContent=isComm?'CSR CALL INTAKE — COMMERCIAL DISPATCH':'CSR CALL INTAKE — OPPORTUNITY SCORING';
+  document.getElementById('btn-residential').style.background=isComm?'transparent':'var(--accent)';
+  document.getElementById('btn-residential').style.color=isComm?'var(--muted)':'#000';
+  document.getElementById('btn-residential').style.border=isComm?'1px solid var(--border)':'none';
+  document.getElementById('btn-commercial').style.background=isComm?'var(--accent2)':'transparent';
+  document.getElementById('btn-commercial').style.color=isComm?'#000':'var(--muted)';
+  document.getElementById('btn-commercial').style.border=isComm?'none':'1px solid var(--border)';
+  document.getElementById('score-result').className='score-result';
+  document.getElementById('rod-save-bar').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════
+// CALLER TYPE HANDLER
+// ═══════════════════════════════════════════════════
+function handleCallerType(){
+  var val=document.getElementById('f-caller-type').value;
+  var isPM=val==='property_manager';
+  var isRental=val==='homeowner_rental';
+  document.getElementById('g-rental-block').style.display=isRental?'block':'none';
+  document.getElementById('g-pm-fields').style.display=isPM?'block':'none';
+  document.getElementById('g-pm-first-visit-alert').style.display=isPM?'block':'none';
+  // Show main form when caller type selected
+  if(val)document.getElementById('g-main-form').style.display='block';
+  if(isPM){
+    // Hide residential fields for PM — they won't know this info
+    var pmHide=['g-equip-age-field','g-home-age-field','g-last-maint-field','g-member-field','g-marketing-section','g-residential-fields','g-reason-card'];
+    pmHide.forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  } else {
+    // Restore
+    var pmShow=['g-equip-age-field','g-home-age-field','g-last-maint-field','g-member-field','g-marketing-section'];
+    pmShow.forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='';});
+    document.getElementById('g-pm-fields').style.display='none';
+    document.getElementById('g-pm-first-visit-alert').style.display='none';
+    // Show reason card for non-PM
+    var rc=document.getElementById('g-reason-card');if(rc)rc.style.display='';
+    // Re-apply mode to get correct field visibility
+    setMode(currentMode);
+  }
+  // Builder field for new construction
+  var bf=document.getElementById('g-builder-field');
+  if(bf)bf.style.display=val==='homeowner'&&document.getElementById('f-reason')&&document.getElementById('f-reason').value==='new_construction'?'block':'none';
+}
+
+// ═══════════════════════════════════════════════════
+// REASON HANDLER — controls which-system, coil question
+// ═══════════════════════════════════════════════════
+function handleReason(){
+  var reason=(document.getElementById('f-reason')||{}).value||'';
+  var showWhichSystem=reason==='no_cool_heat'||reason==='frozen_unit'||reason==='noise'||reason==='not_turning_on';
+  var showCoil=reason==='no_cool_heat'||reason==='frozen_unit';
+  var showBuilderField=reason==='new_construction';
+  var ws=document.getElementById('g-which-system');if(ws)ws.style.display=showWhichSystem?'block':'none';
+  var cq=document.getElementById('g-coil-question');if(cq)cq.style.display=showCoil?'block':'none';
+  var bf=document.getElementById('g-builder-field');if(bf)bf.style.display=showBuilderField?'block':'none';
+  // Refrigerant leak alert
+  if(reason==='refrigerant_leak'){rodToast('⚠️ Refrigerant leak — if dye was inserted, schedule return visit 2 weeks out.','warn');}
+  if(reason==='drain_leak'){rodToast('⚠️ Primary drain leak — SAME-DAY DISPATCH required.','warn');}
+}
+
+// ═══════════════════════════════════════════════════
+// FIELD HANDLERS
+// ═══════════════════════════════════════════════════
+function handleMemberChange(){
+  var v=(document.getElementById('f-member')||{}).value||'';
+  if(v==='yes')rodToast('✅ ACTIVE MEMBER — Say: "Our records show you have an active membership. Thank you for allowing us to serve you."');
+}
+function handleWarranty(){
+  var v=(document.getElementById('f-warranty')||{}).value||'';
+  var w=document.getElementById('g-warranty-company-wrap');if(w)w.style.display=v==='yes'?'block':'none';
+  if(v==='yes')rodToast('🏠 Home Warranty — confirm manager approval before proceeding.','warn');
+}
+function handleGate(){
+  var v=(document.getElementById('f-gate')||{}).value||'';
+  var g=document.getElementById('g-gate-code-wrap');if(g)g.style.display=v==='yes'?'block':'none';
+}
+function handleLadder(){
+  var v=(document.getElementById('f-ladder')||{}).value||'';
+  if(v==='20'||v==='25'||v==='30')rodToast('⚠️ '+v+'ft LADDER — SEND 2 TECHS.','warn');
+}
+function handleOverride(){
+  var v=(document.getElementById('f-override')||{}).value||'';
+  document.getElementById('g-preferred-tech-wrap').style.display=v==='preferred'?'block':'none';
+  document.getElementById('g-recall-tech-wrap').style.display=v==='recall'?'block':'none';
+}
+function handleJobSubtype(){
+  var v=(document.getElementById('f-job-subtype')||{}).value||'';
+  var rl=document.getElementById('g-rec-work-link');if(rl)rl.style.display=v==='rec_work'?'block':'none';
+}
+function updateCommProblemFields(){
+  var reason=(document.getElementById('f-comm-reason')||{}).value||'';
+  var isMaint=reason==='maintenance_pm'||reason==='inspection';
+  var pf=document.getElementById('g-problem-unit-fields');if(pf)pf.style.display=isMaint?'none':'block';
+  var em=document.getElementById('g-comm-emergency');if(em)em.style.display=reason==='emergency'?'block':'none';
+}
+function handleUnitTypeChange(){
+  var v=(document.getElementById('f-unit-type')||{}).value||'';
+  var lbl=document.getElementById('f-num-units-label');
+  if(lbl){var labels={rtu:'# of RTUs',minisplit:'# of Units',package:'# of Package Units',pdu:'# of PDUs',vrv:'# of Systems',ahu:'# of AHUs',chiller:'# of Chillers',refrigeration:'# of Units'};lbl.textContent=labels[v]||'# of Systems';}
+}
+function handleMarketing(){
+  // nothing special needed
+}
+function scoreCommercialLive(){
+  // Trigger commercial scoring when impact changes
+  if(currentMode==='commercial')scoreCall();
+}
+
+// ═══════════════════════════════════════════════════
+// TECH ROSTER & DROPDOWN
+// ═══════════════════════════════════════════════════
+function loadTechRosterForScoring(){
+  if(!currentClientId)return;
+  sb.from('technicians').select('*').eq('client_id',currentClientId).eq('status','active').order('tier').then(function(r){
+    if(r.data)emgTechRoster=r.data;
+  });
+}
+function populateTechAssignDropdown(){
+  var sel1=document.getElementById('f-assign-tech');
+  var sel2=document.getElementById('f-assign-tech-2');
+  if(!sel1||!sel2)return;
+  var tierOrder=['opportunity','service','maintenance','qa'];
+  var tierLabels={opportunity:'🔥 Opportunity',service:'🔧 Service / Repair',maintenance:'✅ Maintenance',qa:'🔬 QA'};
+  var groups={opportunity:[],service:[],maintenance:[],qa:[]};
+  emgTechRoster.filter(function(t){return t.status==='active';}).forEach(function(t){
+    var tier=t.tier&&groups[t.tier]?t.tier:'service';
+    groups[tier].push(t);
+  });
+  [sel1,sel2].forEach(function(sel,idx){
+    var first=idx===0?'<option value="">— Select tech —</option>':'<option value="">— None —</option>';
+    sel.innerHTML=first;
+    tierOrder.forEach(function(tier){
+      if(!groups[tier].length)return;
+      var og=document.createElement('optgroup');og.label=tierLabels[tier];
+      groups[tier].forEach(function(t){
+        var opt=document.createElement('option');
+        opt.value=t.name+(idx===0?'|'+t.tier:''); // primary gets pipe+tier, secondary gets plain name
+        opt.textContent=t.name+(t.proving_period?' (Proving)':'');
+        og.appendChild(opt);
+      });
+      sel.appendChild(og);
+    });
+  });
+  // Also populate JD modal dropdowns
+  var jdR=document.getElementById('jd-tech-reassign');
+  var jd2=document.getElementById('jd-tech-2');
+  var rlSel=document.getElementById('rl-tech-select');
+  if(jdR){
+    jdR.innerHTML='<option value="">— Keep Current —</option>';
+    emgTechRoster.filter(function(t){return t.status==='active';}).forEach(function(t){
+      var o=document.createElement('option');o.value=t.name;o.textContent=t.name;jdR.appendChild(o);
+    });
+  }
+  if(jd2){
+    jd2.innerHTML='<option value="">— None —</option>';
+    emgTechRoster.filter(function(t){return t.status==='active';}).forEach(function(t){
+      var o=document.createElement('option');o.value=t.name;o.textContent=t.name;jd2.appendChild(o);
+    });
+  }
+  if(rlSel){
+    rlSel.innerHTML='<option value="">— Select tech —</option>';
+    emgTechRoster.filter(function(t){return t.status==='active';}).forEach(function(t){
+      var o=document.createElement('option');o.value=t.name;o.textContent=t.name;rlSel.appendChild(o);
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// GOD'S PLAN — TECH HELPERS
+// ═══════════════════════════════════════════════════
+function getAgeBracket(age){
+  if(age==='0-2')return 0;if(age==='3-8')return 1;if(age==='9-14')return 2;if(age==='15+')return 3;return -1;
+}
+function getTopTech(tier){
+  var techs=emgTechRoster.filter(function(t){return t.tier===tier&&t.status==='active';});
+  if(!techs.length)return tier.charAt(0).toUpperCase()+tier.slice(1)+' Tech';
+  return techs[0].name;
+}
+function getTopTechs(tier,n){
+  var techs=emgTechRoster.filter(function(t){return t.tier===tier&&t.status==='active';});
+  return techs.slice(0,n||2).map(function(t){return t.name;});
+}
+function getTopTechDisplay(tier){
+  var names=getTopTechs(tier,3);
+  return names.length?names.join(' / '):(tier+' tech');
+}
+function getCityRegion(str){
+  if(!str)return null;var s=str.toLowerCase();
+  if(s.indexOf('houston')>-1||s.indexOf('katy')>-1||s.indexOf('cypress')>-1||s.indexOf('sugarland')>-1||s.indexOf('pearland')>-1)return'houston';
+  if(s.indexOf('dallas')>-1||s.indexOf('fort worth')>-1||s.indexOf('dfw')>-1||s.indexOf('arlington')>-1||s.indexOf('plano')>-1||s.indexOf('frisco')>-1||s.indexOf('mckinney')>-1||s.indexOf('desoto')>-1||s.indexOf('irving')>-1||s.indexOf('garland')>-1||s.indexOf('euless')>-1||s.indexOf('richmond')>-1||s.indexOf('grand prairie')>-1)return'dallas';
+  return null;
+}
+function getSkillRegion(tag){return getCityRegion(tag);}
+
+// ═══════════════════════════════════════════════════
+// GOD'S PLAN — COMMERCIAL SCORING
+// ═══════════════════════════════════════════════════
+function scoreCommercial(){
+  var unitType=(document.getElementById('f-unit-type')||{}).value||'';
+  var impact=(document.getElementById('f-impact')||{}).value||'';
+  var commReason=(document.getElementById('f-comm-reason')||{}).value||'';
+  var em=document.getElementById('g-comm-emergency');if(em)em.style.display=impact==='emergency'?'block':'none';
+  if(!impact)return;
+  var score=0,reasons=[];
+  if(impact==='emergency'){score=99;reasons.push('Emergency — business revenue loss');}
+  else if(impact==='high'){score=75;reasons.push('High impact');}
+  else if(impact==='medium'){score=45;reasons.push('Medium impact');}
+  else if(impact==='low'){score=20;reasons.push('Low impact / scheduled PM');}
+  // Account-specific preferred tech
+  var custName=(document.getElementById('f-name')||{}).value||'';
+  var custAddr=(document.getElementById('f-address')||{}).value||'';
+  var accountMatch=null,accountMatchScore=0;
+  var isMaintCall=commReason==='maintenance_pm'||commReason==='inspection';
+  if(custName&&emgTechRoster.length){
+    var custLower=custName.toLowerCase().trim();
+    var custWords=custLower.split(/[\s,\/\-\.]+/).filter(function(w){return w.length>=3;});
+    var custRegion=getCityRegion(custAddr)||getCityRegion(custName);
+    emgTechRoster.filter(function(t){return t.status==='active';}).forEach(function(t){
+      var skillTags=(t.skills||'').toLowerCase().split(',').map(function(s){return s.trim();});
+      skillTags.forEach(function(tag){
+        if(!tag)return;
+        var tagWords=tag.split(/[\s,\/\-\.]+/).filter(function(w){return w.length>=3;});
+        var tagRegion=getSkillRegion(tag);
+        var mc=0;
+        custWords.forEach(function(cw){tagWords.forEach(function(tw){if(tw.indexOf(cw)>-1||cw.indexOf(tw)>-1)mc++;});});
+        if(mc>0&&custRegion&&tagRegion&&custRegion===tagRegion)mc+=2;
+        if(mc>0&&mc>accountMatchScore){accountMatchScore=mc;accountMatch=t;}
+      });
+    });
+  }
+  var commTier=score>=70?'opportunity':'service';
+  var commNames=getTopTechs(commTier,3);
+  if(!commNames.length)commNames=getTopTechs('service',3);
+  if(accountMatch&&!isMaintCall){
+    commNames=commNames.filter(function(n){return n.toLowerCase()!==accountMatch.name.toLowerCase();});
+    commNames.unshift(accountMatch.name);
+    commNames=commNames.slice(0,3);
+  }
+  var unitLabel={rtu:'🏢 RTU',pdu:'⚡ PDU',minisplit:'❄️ Mini Split',vrv:'🌀 VRV',package:'📦 Package Unit',refrigeration:'🧊 Refrigeration',chiller:'🏭 Chiller',ahu:'💨 AHU'}[unitType]||'Commercial';
+  var accountTag=accountMatch?'<span style="font-size:0.6rem;padding:2px 7px;border-radius:3px;background:rgba(34,197,94,0.15);color:var(--accent3);font-family:\'Share Tech Mono\',monospace;margin-left:6px">PREFERRED ACCOUNT TECH</span>':'';
+  var techDisplayName=commNames[0]||getTopTech('service');
+  window._rodCleanCommTech=techDisplayName;
+  var techAssignHtml='🔧 '+unitLabel+' — '+techDisplayName+accountTag+(commNames.length>1?' <span style="font-size:0.72rem;opacity:0.7">/ '+commNames.slice(1).join(' / ')+'</span>':'');
+  var routing=impact==='emergency'?'IMMEDIATE DISPATCH — commercial revenue at risk.':impact==='high'?'Priority dispatch — within 2 hours.':'Standard routing — schedule at customer availability.';
+  var scoreClass=score>=70?'high':score>=40?'medium':'low';
+  document.getElementById('score-result').className='score-result show '+scoreClass;
+  document.getElementById('score-num').textContent=score;
+  document.getElementById('score-tech-assign').innerHTML=techAssignHtml;
+  document.getElementById('score-routing-note').textContent=routing;
+  document.getElementById('score-reasons').innerHTML=reasons.map(function(r){return'<span class="reason-tag">'+r+'</span>';}).join('');
+  document.getElementById('score-alerts').innerHTML='';
+  document.getElementById('rod-save-bar').style.display='block';
+  var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}
+  var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';
+  var sd=document.getElementById('f-sched-date');if(sd&&!sd.value)sd.value=toDateStr(new Date());
+}
+
+// ═══════════════════════════════════════════════════
+// GOD'S PLAN — RESIDENTIAL SCORING
+// ═══════════════════════════════════════════════════
+function scoreCall(){
+  if(!currentClientId){rodToast('Not logged in','danger');return;}
+  if(currentMode==='commercial'){
+    sb.from('technicians').select('*').eq('client_id',currentClientId).eq('status','active').then(function(tr){
+      if(tr.data&&tr.data.length)emgTechRoster=tr.data;
+      scoreCommercial();
+    });
+    return;
+  }
+  // Property Manager — simplified scoring
+  var callerType=(document.getElementById('f-caller-type')||{}).value||'';
+  if(callerType==='property_manager'){
+    var pmReason=(document.getElementById('f-pm-reason')||{}).value||'service_call';
+    document.getElementById('score-result').className='score-result show medium';
+    document.getElementById('score-num').textContent='PM';
+    document.getElementById('score-tech-assign').textContent='🔧 SERVICE / REPAIR TECH — '+getTopTechDisplay('service');
+    document.getElementById('score-routing-note').textContent='Property Manager call — schedule at owner/tenant availability.';
+    document.getElementById('score-reasons').innerHTML='<span class="reason-tag">Property Manager</span>';
+    document.getElementById('score-alerts').innerHTML='';
+    document.getElementById('rod-save-bar').style.display='block';
+    var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}
+    var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';
+    var sd=document.getElementById('f-sched-date');if(sd&&!sd.value)sd.value=toDateStr(new Date());
+    return;
+  }
+  var override=(document.getElementById('f-override')||{}).value||'';
+  if(override==='recall'){var rt=(document.getElementById('f-recall-tech')||{}).value||'Last Tech on Site';document.getElementById('score-result').className='score-result show override';document.getElementById('score-num').textContent='🔄';document.getElementById('score-tech-assign').textContent='🔄 RECALL — '+rt;document.getElementById('score-routing-note').textContent='Override active — same tech returns.';document.getElementById('score-reasons').innerHTML='<span class="reason-tag">Recall override</span>';document.getElementById('score-alerts').innerHTML='';document.getElementById('rod-save-bar').style.display='block';var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';return;}
+  if(override==='senior'){document.getElementById('score-result').className='score-result show override';document.getElementById('score-num').textContent='⚠️';document.getElementById('score-tech-assign').textContent='⚠️ SENIOR TECH REQUIRED';document.getElementById('score-routing-note').textContent='Override active — assign most experienced tech.';document.getElementById('score-reasons').innerHTML='<span class="reason-tag">Senior tech request</span>';document.getElementById('score-alerts').innerHTML='';document.getElementById('rod-save-bar').style.display='block';var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';return;}
+  if(override==='preferred'){var pt=(document.getElementById('f-preferred-tech')||{}).value||'Preferred Tech';document.getElementById('score-result').className='score-result show override';document.getElementById('score-num').textContent='⭐';document.getElementById('score-tech-assign').textContent='⭐ PREFERRED TECH — '+pt;document.getElementById('score-routing-note').textContent='Override active — customer relationship honored.';document.getElementById('score-reasons').innerHTML='<span class="reason-tag">Preferred tech</span>';document.getElementById('score-alerts').innerHTML='';document.getElementById('rod-save-bar').style.display='block';var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';return;}
+  if(override==='cancel'){document.getElementById('score-result').className='score-result show override';document.getElementById('score-num').textContent='❌';document.getElementById('score-tech-assign').textContent='❌ JOB CANCELLED';document.getElementById('score-routing-note').textContent='Job removed. Open slot flagged for revenue recovery.';document.getElementById('score-reasons').innerHTML='<span class="reason-tag">Cancellation</span>';document.getElementById('score-alerts').innerHTML='';document.getElementById('rod-save-bar').style.display='block';return;}
+  var custType=(document.getElementById('f-custtype')||{}).value||'';
+  var member=(document.getElementById('f-member')||{}).value||'';
+  var reason=(document.getElementById('f-reason')||{}).value||'';
+  var equipAge=(document.getElementById('f-equip-age')||{}).value||'';
+  var homeAge=(document.getElementById('f-home-age')||{}).value||'';
+  var lastMaint=(document.getElementById('f-last-maint')||{}).value||'';
+  var score=0,reasons=[],techTier='',routing='';
+  // Shoulder season detection
+  var mo=new Date().getMonth();
+  var isShoulderSeason=(mo>=2&&mo<=3)||(mo>=9&&mo<=10);
+  if(isShoulderSeason){score+=8;reasons.push('Shoulder season — pre/post peak upsell window');}
+  // Equipment age scoring
+  if(equipAge==='15+'){score+=40;reasons.push('15+ yr unit');}
+  else if(equipAge==='9-14'){score+=25;reasons.push('9–14 yr unit');}
+  else if(equipAge==='unknown'&&homeAge==='20+'){score+=30;reasons.push('Home 20+ yrs');}
+  else if(equipAge==='unknown'&&homeAge==='10-20'){score+=15;reasons.push('Home 10–20 yrs');}
+  else if(equipAge==='3-8'){score+=10;reasons.push('3–8 yr unit');}
+  else if(equipAge==='0-2'){score+=2;reasons.push('0–2 yr unit');}
+  // Reason scoring
+  if(reason==='new_system_quote'||reason==='replacement'||reason==='changeout'){score+=35;reasons.push('New system quote');}
+  else if(reason==='new_duct_quote'){score+=30;reasons.push('New ductwork quote');}
+  else if(reason==='no_cool_heat'&&(equipAge==='15+'||equipAge==='9-14')){score+=20;reasons.push('Breakdown on aging unit');}
+  else if(reason==='no_cool_heat'){score+=10;reasons.push('No cool/heat');}
+  else if(reason==='frozen_unit'){score+=12;reasons.push('Frozen unit — potential coil/refrigerant');}
+  else if(reason==='repair'){score+=8;reasons.push('Repair needed');}
+  else if(reason==='maintenance'||reason==='filter_change'){score+=3;reasons.push('Maintenance visit');}
+  else if(reason==='warranty'){score+=1;reasons.push('Warranty issue');}
+  else if(reason==='new_construction'){score+=25;reasons.push('New construction');}
+  // Customer type
+  if(custType==='new'){score+=15;reasons.push('New customer');}
+  if(member==='no'){score+=5;reasons.push('No maintenance plan');}
+  if(member==='yes'){score-=5;reasons.push('Active member');}
+  if(lastMaint==='never'){score+=5;reasons.push('Never maintained');}
+  else if(lastMaint==='2yr'){score+=3;reasons.push('Overdue maintenance');}
+  score=Math.min(score,99);
+  var isAged=equipAge==='15+'||equipAge==='9-14';
+  var isUnknownAge=equipAge===''||equipAge==='unknown';
+  var isYoung=equipAge==='0-2',isMidAge=equipAge==='3-8';
+  var isMaintenance=reason==='maintenance'||reason==='filter_change';
+  var isDuctwork=reason==='new_duct_quote';
+  var isNewQuote=reason==='new_system_quote'||reason==='changeout'||reason==='replacement'||reason==='new_construction';
+  var isNewCustomer=custType==='new',isOldHome=homeAge==='20+'||homeAge==='10-20';
+  var shoulderUpgrade=isShoulderSeason&&isMaintenance&&(isMidAge||isUnknownAge);
+  // Tech routing
+  if(isUnknownAge&&!isYoung){techTier='🔥 OPPORTUNITY TECH — '+getTopTechDisplay('opportunity');routing='UNKNOWN EQUIPMENT AGE — Confirm age on site.';}
+  else if(isAged){techTier='🔥 OPPORTUNITY TECH — '+getTopTechDisplay('opportunity');routing='AGED EQUIPMENT — Replacement conversation required.';}
+  else if(isNewQuote){techTier='🔥 OPPORTUNITY TECH — '+getTopTechDisplay('opportunity');routing='NEW SYSTEM OPPORTUNITY — Highest revenue potential.';}
+  else if(isNewCustomer&&!isYoung){techTier='🔥 OPPORTUNITY TECH — '+getTopTechDisplay('opportunity');routing='NEW CUSTOMER — First impression sets the relationship.';}
+  else if(isDuctwork){techTier='⚡ SERVICE MANAGER DECISION — '+getTopTechDisplay('opportunity')+' or '+getTopTech('service');routing='DUCTWORK JOB — Check reports. Route to highest converting tech.';}
+  else if(shoulderUpgrade){techTier='🔥 OPPORTUNITY TECH — '+getTopTechDisplay('opportunity')+' 🌡️';routing='SHOULDER SEASON MAINTENANCE — Pre-peak tune-up. Highest conversion window for membership and system assessment.';}
+  else if(isYoung&&isMaintenance){techTier='✅ MAINTENANCE TECH — '+getTopTechDisplay('maintenance');routing='NEW EQUIPMENT MAINTENANCE (0–2 yrs).';}
+  else if(isYoung&&!isMaintenance){
+    var qaAvail=emgTechRoster.filter(function(t){return t.tier==='qa'&&t.status==='active';}).length>0;
+    if(qaAvail){techTier='🔬 QA TECH — '+getTopTechDisplay('qa');routing='0–2 YR WARRANTY / QA — Quality assurance lane.';}
+    else{techTier='🔧 SERVICE / REPAIR TECH — '+getTopTechDisplay('service');routing='NEW EQUIPMENT SERVICE.';}
+  }
+  else if(isMidAge){techTier='🔧 SERVICE / REPAIR TECH — '+getTopTechDisplay('service');routing='MID-AGE EQUIPMENT (3–8 yrs).';}
+  else if(isOldHome&&isUnknownAge){techTier='🔥 OPPORTUNITY TECH — '+getTopTechDisplay('opportunity');routing='OLD HOME + UNKNOWN AGE — likely aged equipment.';}
+  else{
+    if(score>=60){techTier='🔥 OPPORTUNITY TECH — '+getTopTechDisplay('opportunity');routing='HIGH SCORE — Opportunity lane.';}
+    else if(score>=30){techTier='🔧 SERVICE / REPAIR TECH — '+getTopTechDisplay('service');routing='MID SCORE — Service lane.';}
+    else{techTier='✅ MAINTENANCE TECH — '+getTopTechDisplay('maintenance');routing='LOW SCORE — Maintenance lane.';}
+  }
+  // R-22 check
+  if(reason==='refrigerant_leak'||reason==='repair'){rodToast('⚠️ Ask: Is this an R-22 system? If yes — replacement quote conversation required.','warn');}
+  var scoreClass=score>=70?'high':score>=40?'medium':'low';
+  document.getElementById('score-result').className='score-result show '+scoreClass;
+  document.getElementById('score-num').textContent=score;
+  document.getElementById('score-tech-assign').innerHTML=techTier;
+  document.getElementById('score-routing-note').textContent=routing;
+  var ssHtml=isShoulderSeason?'<div style="margin-bottom:8px;padding:6px 10px;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.25);border-radius:4px;font-family:\'Share Tech Mono\',monospace;font-size:0.62rem;color:var(--warn)">🌡️ SHOULDER SEASON ACTIVE</div>':'';
+  document.getElementById('score-reasons').innerHTML=ssHtml+reasons.map(function(r){return'<span class="reason-tag">'+r+'</span>';}).join('');
+  document.getElementById('score-alerts').innerHTML='';buildAlerts(document.getElementById('score-alerts'));
+  document.getElementById('rod-save-bar').style.display='block';
+  var tas=document.getElementById('g-tech-assign-section');if(tas){tas.style.display='block';populateTechAssignDropdown();}
+  var ss=document.getElementById('g-scheduling-section');if(ss)ss.style.display='block';
+  var sd=document.getElementById('f-sched-date');if(sd&&!sd.value)sd.value=toDateStr(new Date());
+}
+
+function buildAlerts(el){
+  if(!el)return;
+  var alerts=[];
+  var gate=(document.getElementById('f-gate')||{}).value||'';
+  var gateCode=(document.getElementById('f-gate-code')||{}).value||'';
+  var ladder=(document.getElementById('f-ladder')||{}).value||'';
+  var warranty=(document.getElementById('f-warranty')||{}).value||'';
+  var warrantyCompany=(document.getElementById('f-warranty-company')||{}).value||'';
+  var filter=(document.getElementById('f-filter')||{}).value||'';
+  var filterSize=(document.getElementById('f-filter-size')||{}).value||'';
+  if(gate==='yes'&&gateCode)alerts.push('🔒 Gate Code: <strong>'+gateCode+'</strong>');
+  if(gate==='yes'&&!gateCode)alerts.push('🔒 Gate present — confirm code before dispatch');
+  if(ladder==='20'||ladder==='25'||ladder==='30')alerts.push('⚠️ <strong>'+ladder+'ft ladder — SEND 2 TECHS.</strong>');
+  if(warranty==='yes')alerts.push('🏠 Home Warranty: <strong>'+(warrantyCompany||'Company TBD')+'</strong> — Confirm manager approval');
+  if(filter==='tech')alerts.push('🔧 Tech to provide filter(s)'+(filterSize?' — Size: '+filterSize:''));
+  if(filter==='customer')alerts.push('✅ Customer will provide filter(s)');
+  if(alerts.length>0){
+    el.innerHTML='<div style="padding:10px 12px;background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-radius:6px">'+
+      '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.62rem;letter-spacing:2px;color:var(--warn);margin-bottom:6px">DISPATCH ALERTS</div>'+
+      alerts.map(function(a){return'<div style="font-size:0.82rem;color:var(--text);margin-bottom:4px">'+a+'</div>';}).join('')+
+    '</div>';
+  }
+}
+</script>
+<script>
+// ═══════════════════════════════════════════════════
+// SAVE CALL
+// ═══════════════════════════════════════════════════
+function rodSaveCall(){
+  if(!currentClientId){rodToast('Not logged in','danger');return;}
+  var saveInd=document.getElementById('save-indicator');if(saveInd)saveInd.style.display='block';
+  var callerType=(document.getElementById('f-caller-type')||{}).value||'';
+  var isPM=callerType==='property_manager';
+  // Collect fields
+  var name=isPM?(document.getElementById('f-pm-owner-name')||{}).value:(document.getElementById('f-name')||{}).value||'';
+  var phone=isPM?(document.getElementById('f-pm-phone')||{}).value:(document.getElementById('f-phone')||{}).value||'';
+  var email=isPM?(document.getElementById('f-pm-email')||{}).value:(document.getElementById('f-email')||{}).value||'';
+  var address=isPM?(document.getElementById('f-pm-address')||{}).value:(document.getElementById('f-address')||{}).value||'';
+  var reason=isPM?(document.getElementById('f-pm-reason')||{}).value:(currentMode==='commercial'?(document.getElementById('f-comm-reason')||{}).value:(document.getElementById('f-reason')||{}).value)||'';
+  var equipAge=(document.getElementById('f-equip-age')||{}).value||'';
+  var homeAge=(document.getElementById('f-home-age')||{}).value||'';
+  var lastMaint=(document.getElementById('f-last-maint')||{}).value||'';
+  var member=(document.getElementById('f-member')||{}).value||'';
+  var marketing=(document.getElementById('f-marketing')||{}).value||'';
+  var notes=(document.getElementById('f-csr-notes')||{}).value||'';
+  var gateCode=(document.getElementById('f-gate-code')||{}).value||'';
+  var ladderNeeded=(document.getElementById('f-ladder')||{}).value||'no';
+  var filterSize=(document.getElementById('f-filter-size')||{}).value||'';
+  var commFilterSizes=(document.getElementById('f-comm-filter-sizes')||{}).value||'';
+  var commNotes=(document.getElementById('f-comm-notes')||{}).value||'';
+  var pmGateCode=(document.getElementById('f-pm-gate-code')||{}).value||'';
+  var pmLadder=(document.getElementById('f-pm-ladder')||{}).value||'no';
+  var pmLocation=(document.getElementById('f-pm-location')||{}).value||'';
+  var tenantName=(document.getElementById('f-tenant-name')||{}).value||'';
+  var tenantPhone=(document.getElementById('f-tenant-phone')||{}).value||'';
+  var builderRep=(document.getElementById('f-builder-rep')||{}).value||'';
+  // Score & tech
+  var scoreEl=document.getElementById('score-num');
+  var scoreRaw=scoreEl?scoreEl.textContent:'0';
+  var score=parseInt(scoreRaw)||0;
+  var techVal=(document.getElementById('f-assign-tech')||{}).value||'';
+  var techName=techVal?techVal.split('|')[0].trim():'';
+  var techTierRaw=techVal?techVal.split('|')[1]||'':'';
+  // Commercial clean tech name
+  if(currentMode==='commercial'&&window._rodCleanCommTech)techName=window._rodCleanCommTech;
+  var tech2Val=(document.getElementById('f-assign-tech-2')||{}).value||'';
+  var tech2Name=tech2Val?tech2Val.split('|')[0].trim():'';
+  var jobDuration=(document.getElementById('f-job-duration')||{}).value||'';
+  var jobSubtype=(document.getElementById('f-job-subtype')||{}).value||'';
+  var schedDate=(document.getElementById('f-sched-date')||{}).value||(function(){var n=new Date();return n.getFullYear()+'-'+(n.getMonth()<9?'0':'')+(n.getMonth()+1)+'-'+(n.getDate()<10?'0':'')+n.getDate();})();
+  var schedWindow=(document.getElementById('f-sched-window')||{}).value||null;
+  var schedSlot=(document.getElementById('f-sched-slot')||{}).value||null;
+  var numUnits=(document.getElementById('f-num-units')||{}).value||'';
+  var unitType=(document.getElementById('f-unit-type')||{}).value||'';
+  var problemArea=(document.getElementById('f-problem-area')||{}).value||'';
+  var whichUnit=(document.getElementById('f-which-unit')||{}).value||'';
+  // Tech tier mapping
+  var tierMap={'🔥 OPPORTUNITY':'opportunity','🔧 SERVICE':'service','✅ MAINTENANCE':'maintenance','🔬 QA':'qa'};
+  var techTier=techTierRaw||'service';
+  if(!techTierRaw){
+    var techAssignText=(document.getElementById('score-tech-assign')||{}).textContent||'';
+    if(techAssignText.indexOf('OPPORTUNITY')>-1)techTier='opportunity';
+    else if(techAssignText.indexOf('MAINTENANCE')>-1)techTier='maintenance';
+    else if(techAssignText.indexOf('QA')>-1)techTier='qa';
+    else techTier='service';
+  }
+  var finalGateCode=isPM?pmGateCode:gateCode;
+  var finalLadder=isPM?pmLadder:ladderNeeded;
+  var finalFilterSizes=filterSize||commFilterSizes;
+  var finalNotes=isPM?pmLocation:(commNotes||notes);
+  // 1. Upsert customer record — save all data permanently
+  var custPayload={
+    client_id:currentClientId,name:name||'Unknown',phone:phone||null,email:email||null,
+    address:address||null,mode:currentMode,member:member||null,
+    equip_age:equipAge||null,home_age:homeAge||null,last_maint:lastMaint||null,
+    marketing_source:marketing||null,last_seen:schedDate,
+    filter_sizes:finalFilterSizes||null,num_systems:numUnits||null
+  };
+  if(finalNotes)custPayload.notes=finalNotes;
+  // Find or create customer
+  var findCust=currentReturnCustomerId?
+    sb.from('customers').update(custPayload).eq('id',currentReturnCustomerId).select():
+    (address?sb.from('customers').select('id').eq('client_id',currentClientId).ilike('address',address).limit(1):Promise.resolve({data:[]}));
+  var custPromise=currentReturnCustomerId?
+    sb.from('customers').update(custPayload).eq('id',currentReturnCustomerId).select():
+    sb.from('customers').select('id').eq('client_id',currentClientId).ilike('address','%'+(address||name)+'%').limit(1);
+  custPromise.then(function(cr){
+    var customerId=null;
+    if(currentReturnCustomerId){
+      customerId=currentReturnCustomerId;
+      proceedWithSave(customerId);
+    } else if(cr.data&&cr.data.length){
+      customerId=cr.data[0].id;
+      // Update existing customer record with new data
+      sb.from('customers').update(custPayload).eq('id',customerId).then(function(){proceedWithSave(customerId);});
+    } else {
+      // New customer — insert
+      sb.from('customers').insert([custPayload]).select().then(function(nr){
+        customerId=nr.data&&nr.data[0]?nr.data[0].id:null;
+        proceedWithSave(customerId);
+      });
+    }
+  }).catch(function(){proceedWithSave(null);});
+  function proceedWithSave(customerId){
+    // 2. Save call record
+    var callPayload={
+      client_id:currentClientId,customer_id:customerId,score:score,reason:reason,
+      tech_assign:techName,call_date:schedDate,mode:currentMode,
+      notes:finalNotes||null,outcome_amount:0
+    };
+    sb.from('calls').insert([callPayload]).select().then(function(callRes){
+      var callId=callRes.data&&callRes.data[0]?callRes.data[0].id:null;
+      // 3. Create job record
+      var jobPayload={
+        client_id:currentClientId,customer_id:customerId,call_id:callId,
+        tech_name:techName||null,tech_name_2:tech2Name||null,tech_tier:techTier,
+        score:score,reason:reason,status:'pending',
+        customer_name:name||'Unknown',equip_age:equipAge||null,address:address||null,
+        gate_code:finalGateCode||null,ladder_needed:finalLadder||null,
+        csr_notes:finalNotes||null,customer_type:currentMode,
+        builder_rep:builderRep||null,scheduled_date:schedDate||null,
+        sched_window:schedWindow||null,sched_slot:schedSlot||null,
+        tenant_name:tenantName||null,tenant_phone:tenantPhone||null,
+        job_duration:jobDuration||null,system_count:numUnits||null,
+        job_subtype:jobSubtype||null,problem_area:problemArea||null,which_unit:whichUnit||null
+      };
+      sb.from('jobs').insert([jobPayload]).select().then(function(jr){
+        if(saveInd)saveInd.style.display='none';
+        if(jr.error){rodToast('⚠️ Call saved but job failed: '+jr.error.message,'warn');loadDashboardCount();return;}
+        document.getElementById('rod-save-bar').style.display='none';
+        rodToast('✅ Call saved — job created for '+(techName||'Unassigned')+' ✓');
+        loadDashboardCount();
+        // Refresh board immediately
+        if(typeof loadSchedule==='function')loadSchedule();
+        resetForm();
+      });
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// RESET FORM
+// ═══════════════════════════════════════════════════
+function resetForm(){
+  currentReturnCustomerId=null;
+  var fields=['f-address','f-name','f-phone','f-email','f-caller-type','f-equip-age','f-home-age','f-last-maint','f-member','f-warranty','f-warranty-company','f-builder-rep','f-reason','f-override','f-preferred-tech','f-recall-tech','f-gate','f-gate-code','f-ladder','f-filter','f-filter-size','f-csr-notes','f-marketing','f-tenant-name','f-tenant-phone','f-unit-type','f-comm-reason','f-impact','f-num-units','f-problem-area','f-which-unit','f-comm-filter-sizes','f-comm-notes','f-pm-owner-name','f-pm-phone','f-pm-email','f-pm-address','f-pm-reason','f-pm-gate-code','f-pm-ladder','f-pm-location','f-assign-tech','f-assign-tech-2','f-job-duration','f-job-subtype','f-rec-work-job-id','f-sched-date','f-sched-window','f-sched-slot','f-which-system','f-coil-clean'];
+  fields.forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('score-result').className='score-result';
+  document.getElementById('g-returning-banner').style.display='none';
+  document.getElementById('g-pm-first-visit-alert').style.display='none';
+  document.getElementById('g-main-form').style.display='none';
+  document.getElementById('g-which-system').style.display='none';
+  document.getElementById('g-coil-question').style.display='none';
+  document.getElementById('g-gate-code-wrap').style.display='none';
+  document.getElementById('g-warranty-company-wrap').style.display='none';
+  document.getElementById('g-preferred-tech-wrap').style.display='none';
+  document.getElementById('g-recall-tech-wrap').style.display='none';
+  document.getElementById('g-rec-work-link').style.display='none';
+  document.getElementById('g-scheduling-section').style.display='none';
+  document.getElementById('g-tech-assign-section').style.display='none';
+  document.getElementById('g-pm-fields').style.display='none';
+  document.getElementById('g-rental-block').style.display='none';
+  document.getElementById('g-comm-emergency').style.display='none';
+  document.getElementById('rod-save-bar').style.display='none';
+  setMode('residential');
+  var cd=document.getElementById('f-call-date');if(cd)cd.value=toDateStr(new Date());
+}
+</script>
+<script>
+// ═══════════════════════════════════════════════════
+// DISPATCH BOARD — SCHEDULE
+// ═══════════════════════════════════════════════════
+function setSchedView(mode){
+  schedViewMode=mode;
+  var wv=document.getElementById('sched-week-view');
+  var dv=document.getElementById('sched-day-view');
+  var bw=document.getElementById('btn-sched-week');
+  var bd=document.getElementById('btn-sched-day');
+  if(wv)wv.style.display=mode==='week'?'block':'none';
+  if(dv)dv.style.display=mode==='day'?'block':'none';
+  if(bw){bw.classList.toggle('active',mode==='week');}
+  if(bd){bd.classList.toggle('active',mode==='day');}
+}
+function schedNav(dir){
+  if(schedViewMode==='week'){schedCurrentDate.setDate(schedCurrentDate.getDate()+(dir*7));}
+  else{schedCurrentDate.setDate(schedCurrentDate.getDate()+dir);}
+  loadSchedule();
+}
+function schedGoToday(){schedCurrentDate=new Date();setSchedView('week');loadSchedule();}
+function loadSchedule(){
+  if(!currentClientId)return;
+  if(schedViewMode==='week')loadScheduleWeek();
+  else loadScheduleDay(toDateStr(schedCurrentDate));
+}
+function loadScheduleWeek(){
+  var weekStart=getWeekStart(new Date(schedCurrentDate));
+  var days=[];
+  for(var i=0;i<7;i++){var d=new Date(weekStart);d.setDate(d.getDate()+i);days.push(d);}
+  var startStr=toDateStr(days[0]),endStr=toDateStr(days[6]);
+  var label=days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+days[6].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('sched-range-label').textContent=label;
+  // Query 1: dated jobs in week range
+  sb.from('jobs').select('id,customer_name,score,tech_name,tech_tier,sched_slot,sched_window,scheduled_date,status,reason,csr_notes,address,outcome,amount_collected,created_at,tech_name_2')
+    .eq('client_id',currentClientId)
+    .gte('scheduled_date',startStr).lte('scheduled_date',endStr)
+    .neq('status','cancelled')
+    .order('scheduled_date',{ascending:true}).then(function(r1){
+    var datedJobs=r1.data||[];
+    // Query 2: ALL pending null-date jobs — no timezone filtering
+    sb.from('jobs').select('id,customer_name,score,tech_name,tech_tier,sched_slot,sched_window,scheduled_date,status,reason,csr_notes,address,outcome,amount_collected,created_at,tech_name_2')
+      .eq('client_id',currentClientId)
+      .is('scheduled_date',null)
+      .in('status',['pending','enroute','arrived'])
+      .then(function(r2){
+      var unscheduledJobs=r2.data||[];
+      // Build day buckets
+      var byDate={};
+      days.forEach(function(d){byDate[toDateStr(d)]=[];});
+      datedJobs.forEach(function(j){if(j.scheduled_date&&byDate[j.scheduled_date])byDate[j.scheduled_date].push(j);});
+      var today=toDateStr(new Date());
+      var DAY_NAMES=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      var grid=document.getElementById('sched-week-grid');
+      grid.innerHTML=days.map(function(d,i){
+        var ds=toDateStr(d);
+        var dayJobs=byDate[ds]||[];
+        var isToday=ds===today,isPast=ds<today;
+        var morningCount=dayJobs.filter(function(j){return j.sched_window==='morning';}).length;
+        var afternoonCount=dayJobs.filter(function(j){return j.sched_window==='afternoon';}).length;
+        var totalCount=dayJobs.length;
+        var statusColor=totalCount===0?'var(--accent3)':totalCount<4?'var(--warn)':'var(--danger)';
+        var jobCards=dayJobs.slice(0,4).map(function(j){
+          var tc=TIER_COLORS[j.tech_tier]||'var(--muted)';
+          var isDone=j.status==='completed';
+          return'<div onclick="openJobDetailModal(\''+j.id+'\')" class="week-job-card" style="border-left-color:'+tc+';opacity:'+(isDone?0.5:1)+'">'+
+            '<div class="week-job-name">'+(j.customer_name||'Unknown')+'</div>'+
+            '<div class="week-job-slot">'+(SLOT_LABELS[j.sched_slot]||j.sched_slot||'No slot')+'</div>'+
+          '</div>';
+        }).join('');
+        var moreCount=dayJobs.length-4;
+        return'<div class="week-cell'+(isToday?' today':'')+'" onclick="schedDrillDown(\''+ds+'\')">'+
+          '<div class="week-cell-header'+(isToday?' today-hdr':'')+'">'+
+            '<div><div class="week-day-name">'+DAY_NAMES[i]+'</div><div class="week-day-num" style="color:'+(isToday?'var(--accent2)':'var(--text)')+'">'+d.getDate()+'</div></div>'+
+            '<div style="text-align:right"><div class="week-job-count" style="color:'+statusColor+'">'+totalCount+'</div><div style="font-size:0.6rem;color:var(--muted)">jobs</div></div>'+
+          '</div>'+
+          '<div class="week-cell-body">'+
+            (totalCount>0?'<div style="display:flex;gap:4px;margin-bottom:5px"><span style="font-size:0.58rem;padding:1px 5px;border-radius:2px;background:rgba(234,179,8,0.12);color:var(--warn)">🌅 '+morningCount+'</span><span style="font-size:0.58rem;padding:1px 5px;border-radius:2px;background:rgba(14,165,233,0.1);color:var(--accent2)">☀️ '+afternoonCount+'</span></div>':'')+
+            jobCards+
+            (moreCount>0?'<div style="font-size:0.62rem;color:var(--muted);text-align:center;margin-top:3px">+'+moreCount+' more</div>':'')+
+            (totalCount===0?'<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:14px 0;opacity:0.4">'+(isPast?'No calls':'Open')+'</div>':'')+
+          '</div>'+
+        '</div>';
+      }).join('');
+      // Unscheduled jobs panel
+      var up=document.getElementById('sched-unscheduled-panel');
+      var uc=document.getElementById('sched-unscheduled-cards');
+      if(up&&uc){
+        if(unscheduledJobs.length>0){
+          up.style.display='block';
+          uc.innerHTML=unscheduledJobs.map(function(j){
+            var tc=TIER_COLORS[j.tech_tier]||'var(--muted)';
+            return'<div onclick="openJobDetailModal(\''+j.id+'\')" style="padding:8px 10px;background:rgba(0,0,0,0.2);border-left:3px solid '+tc+';border-radius:4px;cursor:pointer;min-width:150px">'+
+              '<div style="font-size:0.78rem;font-weight:600">'+(j.customer_name||'Unknown')+'</div>'+
+              '<div style="font-size:0.68rem;color:var(--warn)">⚠ No date · '+(j.tech_name||'No tech')+'</div>'+
+              '<div style="font-size:0.62rem;color:var(--muted)">'+(j.reason||'').replace(/_/g,' ')+'</div>'+
+            '</div>';
+          }).join('');
+        } else {up.style.display='none';}
+      }
+    });
+  });
+}
+function schedDrillDown(dateStr){
+  schedCurrentDate=new Date(dateStr+'T12:00:00');
+  setSchedView('day');
+  loadScheduleDay(dateStr);
+}
+function loadScheduleDay(dateStr){
+  if(!dateStr)dateStr=toDateStr(schedCurrentDate);
+  var d=new Date(dateStr+'T12:00:00');
+  var label=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('sched-range-label').textContent=label;
+  var dh=document.getElementById('sched-day-header');if(dh)dh.textContent=label;
+  var tierOrder=['opportunity','service','maintenance','qa'];
+  var tierLabels={opportunity:'🔥 Opportunity',service:'🔧 Service / Repair',maintenance:'✅ Maintenance',qa:'🔬 QA'};
+  // Query 1: dated jobs for this day
+  var dayMap={};
+  sb.from('jobs').select('id,customer_name,score,tech_name,tech_name_2,tech_tier,sched_slot,sched_window,scheduled_date,status,reason,csr_notes,address,outcome,amount_collected,call_id,job_subtype,job_duration')
+    .eq('client_id',currentClientId)
+    .eq('scheduled_date',dateStr)
+    .neq('status','cancelled')
+    .order('score',{ascending:false}).then(function(r1){
+    (r1.data||[]).forEach(function(j){dayMap[j.id]=j;});
+    // Query 2: ALL pending null-date jobs
+    sb.from('jobs').select('id,customer_name,score,tech_name,tech_name_2,tech_tier,sched_slot,sched_window,scheduled_date,status,reason,csr_notes,address,outcome,amount_collected,call_id,job_subtype,job_duration')
+      .eq('client_id',currentClientId)
+      .is('scheduled_date',null)
+      .in('status',['pending','enroute','arrived'])
+      .order('score',{ascending:false}).then(function(r2){
+      (r2.data||[]).forEach(function(j){j._unscheduled=true;dayMap[j.id]=j;});
+      var allJobs=Object.values(dayMap).sort(function(a,b){return (b.score||0)-(a.score||0);});
+      var datedJobs=allJobs.filter(function(j){return!j._unscheduled;});
+      var unscheduledJobs=allJobs.filter(function(j){return j._unscheduled;});
+      // Build tech list from roster
+      var techList=[];
+      if(emgTechRoster&&emgTechRoster.length){
+        tierOrder.forEach(function(tier){
+          emgTechRoster.filter(function(t){return t.tier===tier&&t.status==='active';}).forEach(function(t){
+            techList.push({name:t.name,tier:tier,proving:t.proving_period||false});
+          });
+        });
+      }
+      if(!techList.length){
+        var seen={};
+        datedJobs.forEach(function(j){
+          if(j.tech_name&&!seen[j.tech_name]){seen[j.tech_name]=true;techList.push({name:j.tech_name,tier:j.tech_tier||'service',proving:false});}
+        });
+      }
+      // Add any techs from jobs not in roster
+      var rosterNames=techList.map(function(t){return t.name.toLowerCase();});
+      datedJobs.forEach(function(j){
+        if(j.tech_name&&rosterNames.indexOf(j.tech_name.toLowerCase())===-1){
+          techList.push({name:j.tech_name,tier:j.tech_tier||'service',proving:false});
+          rosterNames.push(j.tech_name.toLowerCase());
+        }
+      });
+      // Build slot map: techName → slot → jobs[]
+      var techSlotMap={};
+      techList.forEach(function(t){
+        techSlotMap[t.name]={};
+        DAY_SLOTS.forEach(function(s){techSlotMap[t.name][s]=[];});
+        techSlotMap[t.name]['unslotted']=[];
+      });
+      var unassigned=[],noSlot=[];
+      datedJobs.forEach(function(j){
+        if(!j.tech_name){unassigned.push(j);return;}
+        var slot=j.sched_slot||'unslotted';
+        // Primary tech column
+        if(techSlotMap[j.tech_name]){
+          if(techSlotMap[j.tech_name][slot])techSlotMap[j.tech_name][slot].push({job:j,isPrimary:true});
+          else techSlotMap[j.tech_name]['unslotted'].push({job:j,isPrimary:true});
+          if(!j.sched_slot)noSlot.push(j);
+        }
+        // Secondary tech column
+        if(j.tech_name_2){
+          var t2clean=j.tech_name_2.indexOf('|')>-1?j.tech_name_2.split('|')[0]:j.tech_name_2;
+          if(techSlotMap[t2clean]){
+            if(techSlotMap[t2clean][slot])techSlotMap[t2clean][slot].push({job:j,isPrimary:false,primaryTech:j.tech_name});
+            else techSlotMap[t2clean]['unslotted'].push({job:j,isPrimary:false,primaryTech:j.tech_name});
+          }
+        }
+      });
+      // Render grid
+      if(!techList.length){
+        document.getElementById('sched-day-grid').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:0.72rem">No techs in roster. Add techs in Tech Management.</div>';
+        renderDayPanels(unassigned,noSlot,unscheduledJobs);
+        return;
+      }
+      var html='<div style="overflow-x:auto"><table class="day-grid"><thead><tr><th style="min-width:100px">Slot</th>';
+      techList.forEach(function(t){
+        var tc=TIER_COLORS[t.tier]||'var(--muted)';
+        html+='<th draggable="false" style="color:'+tc+'">'+(t.name.toUpperCase())+'<div style="font-size:0.58rem;font-weight:400;color:var(--muted);margin-top:2px">'+tierLabels[t.tier]+'</div></th>';
+      });
+      html+='</tr></thead><tbody>';
+      DAY_SLOTS.forEach(function(slot){
+        html+='<tr><td class="day-slot-label">'+SLOT_LABELS[slot]+'</td>';
+        techList.forEach(function(t){
+          var cellEntries=techSlotMap[t.name][slot]||[];
+          var cellHtml='';
+          if(cellEntries.length){
+            cellHtml=cellEntries.map(function(e){
+              var j=e.job;
+              var tc=TIER_COLORS[j.tech_tier]||'var(--muted)';
+              var isDone=j.status==='completed';
+              var t2clean=j.tech_name_2?(j.tech_name_2.indexOf('|')>-1?j.tech_name_2.split('|')[0]:j.tech_name_2):'';
+              var techBadge=e.isPrimary&&t2clean?
+                '<span style="font-size:0.58rem;color:#c4b5fd;display:block;margin-top:2px">+ '+t2clean+'</span>':
+                (!e.isPrimary?'<span style="font-size:0.58rem;color:#fb923c;display:block;margin-top:2px">🔗 w/ '+j.tech_name+'</span>':'');
+              return'<div onclick="openJobDetailModal(\''+j.id+'\')" class="day-job-card" style="border-left-color:'+tc+';opacity:'+(isDone?0.5:1)+'" draggable="true" ondragstart="schedDragStart(event,\''+j.id+'\')">'+
+                '<div class="day-job-name">'+(j.customer_name||'Unknown')+'</div>'+
+                '<div class="day-job-meta">'+(j.reason||'').replace(/_/g,' ')+(isDone?' ✅':j.status==='enroute'?' 🚗':j.status==='arrived'?' 📍':'')+'</div>'+
+                techBadge+
+              '</div>';
+            }).join('');
+          } else {
+            cellHtml='<div class="open-cell">OPEN</div>';
+          }
+          html+='<td ondragover="event.preventDefault()" ondrop="schedDropOnTech(event,\''+t.name+'\',\''+slot+'\')" >'+cellHtml+'</td>';
+        });
+        html+='</tr>';
+      });
+      html+='</tbody></table></div>';
+      document.getElementById('sched-day-grid').innerHTML=html;
+      renderDayPanels(unassigned,noSlot,unscheduledJobs);
+    });
+  });
+}
+function renderDayPanels(unassigned,noSlot,unscheduledJobs){
+  // Unscheduled panel
+  var up=document.getElementById('day-unscheduled-panel');
+  var uc=document.getElementById('day-unscheduled-cards');
+  if(up&&uc){
+    if(unscheduledJobs.length){
+      up.style.display='block';
+      uc.innerHTML=unscheduledJobs.map(function(j){
+        var tc=TIER_COLORS[j.tech_tier]||'var(--muted)';
+        return'<div onclick="openJobDetailModal(\''+j.id+'\')" style="padding:8px 10px;background:rgba(0,0,0,0.2);border-left:3px solid '+tc+';border-radius:4px;cursor:pointer;min-width:150px">'+
+          '<div style="font-size:0.78rem;font-weight:600">'+(j.customer_name||'Unknown')+'</div>'+
+          '<div style="font-size:0.68rem;color:var(--warn)">⚠ No date · '+(j.tech_name||'No tech')+'</div>'+
+          '<div style="font-size:0.62rem;color:var(--muted)">'+(j.reason||'').replace(/_/g,' ')+'</div>'+
+        '</div>';
+      }).join('');
+    } else {up.style.display='none';}
+  }
+  // No-slot panel
+  var nsp=document.getElementById('day-noslot-panel');
+  var nsc=document.getElementById('day-noslot-cards');
+  if(nsp&&nsc){
+    var realNoSlot=noSlot.filter(function(j){return !j._unscheduled;});
+    if(realNoSlot.length){
+      nsp.style.display='block';
+      nsc.innerHTML=realNoSlot.map(function(j){
+        var tc=TIER_COLORS[j.tech_tier]||'var(--muted)';
+        return'<div onclick="openJobDetailModal(\''+j.id+'\')" style="padding:8px 10px;background:rgba(0,0,0,0.2);border-left:3px solid '+tc+';border-radius:4px;cursor:pointer;min-width:150px">'+
+          '<div style="font-size:0.78rem;font-weight:600">'+(j.customer_name||'Unknown')+'</div>'+
+          '<div style="font-size:0.68rem;color:var(--muted)">'+(j.tech_name||'—')+'</div>'+
+        '</div>';
+      }).join('');
+    } else {nsp.style.display='none';}
+  }
+  // Unassigned panel
+  var uap=document.getElementById('day-unassigned-panel');
+  var uac=document.getElementById('day-unassigned-cards');
+  if(uap&&uac){
+    if(unassigned.length){
+      uap.style.display='block';
+      uac.innerHTML=unassigned.map(function(j){
+        return'<div onclick="openJobDetailModal(\''+j.id+'\')" style="padding:8px 10px;background:rgba(0,0,0,0.2);border-left:3px solid var(--danger);border-radius:4px;cursor:pointer;min-width:150px">'+
+          '<div style="font-size:0.78rem;font-weight:600">'+(j.customer_name||'Unknown')+'</div>'+
+          '<div style="font-size:0.68rem;color:var(--muted)">'+(j.reason||'').replace(/_/g,' ')+'</div>'+
+        '</div>';
+      }).join('');
+    } else {uap.style.display='none';}
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// DRAG & DROP
+// ═══════════════════════════════════════════════════
+var _dragJobId=null;
+function schedDragStart(e,jobId){_dragJobId=jobId;}
+function schedDropOnTech(e,techName,slot){
+  e.preventDefault();
+  if(!_dragJobId)return;
+  var slotVal=slot==='unslotted'?null:slot;
+  sb.from('jobs').update({tech_name:techName,sched_slot:slotVal}).eq('id',_dragJobId).then(function(r){
+    if(r.error){rodToast('Reassign failed: '+r.error.message,'danger');return;}
+    rodToast('Reassigned to '+techName+(slotVal?' · '+SLOT_LABELS[slotVal]:''));
+    _dragJobId=null;
+    loadSchedule();
+  });
+}
+</script>
+<script>
+// ═══════════════════════════════════════════════════
+// JOB DETAIL MODAL
+// ═══════════════════════════════════════════════════
+function openJobDetailModal(jobId){
+  if(!jobId)return;
+  sb.from('jobs').select('*').eq('id',jobId).single().then(function(r){
+    if(r.error||!r.data){rodToast('Could not load job','danger');return;}
+    var j=r.data;
+    var modal=document.getElementById('job-detail-modal');
+    if(!modal)return;
+    modal.style.display='flex';
+    document.getElementById('jd-job-id').value=j.id;
+    document.getElementById('jd-call-id').value=j.call_id||'';
+    document.getElementById('jd-header-name').textContent=j.customer_name||'Unknown';
+    document.getElementById('jd-header-addr').textContent=j.address||'Address not on file';
+    document.getElementById('jd-header-reason').textContent=(j.reason||'—').replace(/_/g,' ');
+    document.getElementById('jd-header-score').textContent=j.score||'—';
+    document.getElementById('jd-header-tech').textContent=j.tech_name||'Unassigned';
+    // CSR notes context bar
+    var csrEl=document.getElementById('jd-header-csr-notes');
+    if(csrEl){
+      if(j.csr_notes){csrEl.textContent='📋 '+j.csr_notes;csrEl.style.display='block';}
+      else {csrEl.style.display='none';}
+    }
+    document.getElementById('jd-status').value=j.status||'pending';
+    // Populate tech dropdowns first
+    populateTechAssignDropdown();
+    // Then set values
+    setTimeout(function(){
+      document.getElementById('jd-tech-reassign').value=j.tech_name||'';
+      var t2clean=j.tech_name_2?(j.tech_name_2.indexOf('|')>-1?j.tech_name_2.split('|')[0]:j.tech_name_2):'';
+      document.getElementById('jd-tech-2').value=t2clean;
+    },100);
+    document.getElementById('jd-duration').value=j.job_duration||'';
+    document.getElementById('jd-outcome').value=j.outcome||'';
+    document.getElementById('jd-call-type').value=j.call_type||'';
+    document.getElementById('jd-sched-date').value=j.scheduled_date||'';
+    document.getElementById('jd-sched-window').value=j.sched_window||'';
+    document.getElementById('jd-sched-slot').value=j.sched_slot||'';
+    document.getElementById('jd-amount').value=j.amount_collected||'';
+    document.getElementById('jd-membership').checked=!!(j.membership_sold);
+    document.getElementById('jd-work-done').value=j.work_done||'';
+    document.getElementById('jd-csr-notes').value=j.csr_notes||'';
+    // Rec-work field
+    var rwWrap=document.getElementById('jd-rec-work-wrap');
+    var rwInput=document.getElementById('jd-rec-work-job-id');
+    var isRecWork=j.job_subtype==='rec_work'||j.job_subtype==='return_part'||j.job_subtype==='return_followup';
+    if(rwWrap)rwWrap.style.display=isRecWork?'block':'none';
+    if(rwInput)rwInput.value='';
+    // If no CSR notes on job, pull from linked call
+    if(!j.csr_notes&&j.call_id&&csrEl){
+      sb.from('calls').select('notes,equip_age,member').eq('id',j.call_id).single().then(function(cr){
+        if(cr.data){
+          var ctx=[];
+          if(cr.data.equip_age)ctx.push('Equip: '+cr.data.equip_age+' yrs');
+          if(cr.data.member==='yes')ctx.push('✓ Active Member');
+          if(cr.data.notes)ctx.push(cr.data.notes);
+          if(ctx.length){csrEl.textContent='📋 Intake: '+ctx.join(' · ');csrEl.style.display='block';}
+        }
+      });
+    }
+  });
+}
+function closeJobDetailModal(){
+  var modal=document.getElementById('job-detail-modal');
+  if(modal)modal.style.display='none';
+}
+function saveJobDetail(){
+  var jobId=document.getElementById('jd-job-id').value;
+  if(!jobId){rodToast('No job ID','danger');return;}
+  var techReassign=document.getElementById('jd-tech-reassign').value;
+  var tech2=document.getElementById('jd-tech-2').value;
+  var duration=document.getElementById('jd-duration').value;
+  var schedDate=document.getElementById('jd-sched-date').value||null;
+  var schedWindow=document.getElementById('jd-sched-window').value||null;
+  var schedSlot=document.getElementById('jd-sched-slot').value||null;
+  var status=document.getElementById('jd-status').value;
+  var outcome=document.getElementById('jd-outcome').value||null;
+  var callType=document.getElementById('jd-call-type').value||null;
+  var amount=parseFloat(document.getElementById('jd-amount').value)||0;
+  var membershipSold=document.getElementById('jd-membership').checked;
+  var workDone=document.getElementById('jd-work-done').value||null;
+  var csrNotes=document.getElementById('jd-csr-notes').value||null;
+  var payload={
+    status:status,outcome:outcome,call_type:callType,
+    scheduled_date:schedDate,sched_window:schedWindow,sched_slot:schedSlot,
+    amount_collected:amount,membership_sold:membershipSold,
+    work_done:workDone,csr_notes:csrNotes,job_duration:duration||null
+  };
+  if(techReassign)payload.tech_name=techReassign;
+  if(tech2!==undefined)payload.tech_name_2=tech2||null;
+  // Cancel alert
+  if(status==='cancelled'){
+    var alertEl=document.getElementById('open-slot-alert');if(alertEl)alertEl.style.display='flex';
+  }
+  sb.from('jobs').update(payload).eq('id',jobId).then(function(r){
+    if(r.error){rodToast('Error saving: '+r.error.message,'danger');return;}
+    rodToast(membershipSold?'Job updated ✓ — Membership logged!':'Job updated ✓');
+    closeJobDetailModal();
+    loadSchedule();
+    loadDashboardCount();
+  });
+}
+function updateJdSlots(){
+  // Slot selection is already fixed — no dynamic filtering needed
+}
+
+// ═══════════════════════════════════════════════════
+// CUSTOMER DATABASE
+// ═══════════════════════════════════════════════════
+function rodRenderDB(){
+  if(!currentClientId)return;
+  var q=(document.getElementById('cust-search')||{}).value||'';
+  var query=sb.from('customers').select('id,name,phone,equip_age,member,last_seen,filter_sizes').eq('client_id',currentClientId).order('last_seen',{ascending:false}).limit(100);
+  if(q)query=query.or('name.ilike.%'+q+'%,phone.ilike.%'+q+'%');
+  query.then(function(r){
+    var custs=r.data||[];
+    // Get call counts
+    sb.from('jobs').select('customer_id').eq('client_id',currentClientId).then(function(jr){
+      var counts={};
+      (jr.data||[]).forEach(function(j){counts[j.customer_id]=(counts[j.customer_id]||0)+1;});
+      var tbody=document.getElementById('cust-table-body');if(!tbody)return;
+      if(!custs.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">No customers found.</td></tr>';return;}
+      tbody.innerHTML=custs.map(function(c){
+        return'<tr onclick="rodLoadToIntake(\''+c.id+'\')" style="cursor:pointer">'+
+          '<td><strong>'+(c.name||'—')+'</strong></td>'+
+          '<td style="font-family:\'Share Tech Mono\',monospace;font-size:0.75rem;color:var(--muted)">'+(c.phone||'—')+'</td>'+
+          '<td style="font-family:\'Share Tech Mono\',monospace;font-size:0.72rem">'+(c.equip_age||'—')+'</td>'+
+          '<td>'+(c.member==='yes'?'<span style="color:var(--accent3)">✓ YES</span>':'<span style="color:var(--muted)">No</span>')+'</td>'+
+          '<td><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;color:var(--accent)">'+(counts[c.id]||0)+'</span></td>'+
+          '<td style="font-size:0.78rem;color:var(--muted)">'+(c.last_seen||'—')+'</td>'+
+          '<td>'+
+            '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();rodLoadToIntake(\''+c.id+'\')">Load</button> '+
+            '<button data-custid="'+c.id+'" onclick="event.stopPropagation();editCustomer(this.dataset.custid)" style="background:rgba(14,165,233,0.1);color:var(--accent2);border:1px solid rgba(14,165,233,0.3);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9rem">✎</button>'+
+          '</td>'+
+        '</tr>';
+      }).join('');
+    });
+  });
+}
+function editCustomer(custId){
+  // Find most recent job → open Job Detail. No jobs → open edit form.
+  var today=toDateStr(new Date());
+  sb.from('jobs').select('id,scheduled_date,status').eq('client_id',currentClientId).eq('customer_id',custId).neq('status','cancelled').order('scheduled_date',{ascending:false}).limit(1).then(function(r){
+    if(r.data&&r.data.length){openJobDetailModal(r.data[0].id);}
+    else{openEditCustomerForm(custId);}
+  });
+}
+function openEditCustomerForm(custId){
+  sb.from('customers').select('*').eq('id',custId).single().then(function(r){
+    if(!r.data)return;
+    var c=r.data;
+    document.getElementById('edit-cust-id').value=c.id;
+    document.getElementById('edit-cust-name').value=c.name||'';
+    document.getElementById('edit-cust-phone').value=c.phone||'';
+    document.getElementById('edit-cust-address').value=c.address||'';
+    document.getElementById('edit-cust-email').value=c.email||'';
+    document.getElementById('edit-cust-equip-age').value=c.equip_age||'';
+    document.getElementById('edit-cust-member').value=c.member||'';
+    document.getElementById('edit-cust-filter-sizes').value=c.filter_sizes||'';
+    document.getElementById('edit-cust-notes').value=c.notes||'';
+    document.getElementById('edit-customer-modal').style.display='flex';
+  });
+}
+function saveEditCustomer(){
+  var id=document.getElementById('edit-cust-id').value;
+  if(!id)return;
+  sb.from('customers').update({
+    name:document.getElementById('edit-cust-name').value,
+    phone:document.getElementById('edit-cust-phone').value,
+    address:document.getElementById('edit-cust-address').value,
+    email:document.getElementById('edit-cust-email').value,
+    equip_age:document.getElementById('edit-cust-equip-age').value||null,
+    member:document.getElementById('edit-cust-member').value||null,
+    filter_sizes:document.getElementById('edit-cust-filter-sizes').value||null,
+    notes:document.getElementById('edit-cust-notes').value||null
+  }).eq('id',id).then(function(r){
+    if(r.error){rodToast('Save failed','danger');return;}
+    rodToast('Customer updated ✓');
+    document.getElementById('edit-customer-modal').style.display='none';
+    rodRenderDB();
+  });
+}
+function rodLoadToIntake(custId){
+  showTab('intake');
+  setTimeout(function(){rodSelectCustomer(custId);},200);
+}
+
+// ═══════════════════════════════════════════════════
+// RUNNING LATE
+// ═══════════════════════════════════════════════════
+function openRunningLateModal(){
+  populateTechAssignDropdown();
+  document.getElementById('running-late-modal').style.display='flex';
+}
+function saveRunningLate(){
+  var techName=(document.getElementById('rl-tech-select')||{}).value||'';
+  var delay=parseInt((document.getElementById('rl-delay')||{}).value)||30;
+  var reason=(document.getElementById('rl-reason')||{}).value||'Running late';
+  if(!techName){rodToast('Select a tech','warn');return;}
+  var today=toDateStr(new Date());
+  sb.from('jobs').select('id,sched_slot,sched_window').eq('client_id',currentClientId).eq('tech_name',techName).eq('scheduled_date',today).in('status',['pending','enroute']).then(function(r){
+    if(!r.data||!r.data.length){rodToast('No active jobs today for '+techName,'warn');document.getElementById('running-late-modal').style.display='none';return;}
+    sb.from('override_log').insert([{client_id:currentClientId,tech_name:techName,override_by:'Dispatcher',reason:'Running late — '+delay+' min: '+reason,override_date:new Date().toISOString()}]).then(function(){});
+    document.getElementById('running-late-modal').style.display='none';
+    rodToast('⏰ Running late logged for '+techName+' — '+delay+' min delay.','warn');
+    loadSchedule();
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// DISPATCHER OVERRIDE
+// ═══════════════════════════════════════════════════
+function openDispatcherOverrideModal(rodRec,currentTech){
+  document.getElementById('do-rod-rec').value=rodRec||'';
+  document.getElementById('do-choice').value='';
+  document.getElementById('do-reason').value='';
+  document.getElementById('do-other-text').value='';
+  document.getElementById('do-other-wrap').style.display='none';
+  document.getElementById('dispatcher-override-modal').style.display='flex';
+}
+function confirmDispatcherOverride(){
+  var rodRec=document.getElementById('do-rod-rec').value;
+  var choice=document.getElementById('do-choice').value;
+  var reason=document.getElementById('do-reason').value;
+  var notes=document.getElementById('do-other-text').value;
+  if(!choice||!reason){rodToast('Fill in choice and reason','warn');return;}
+  sb.from('dispatcher_overrides').insert([{
+    client_id:currentClientId,rod_recommendation:rodRec,dispatcher_choice:choice,
+    reason:reason,notes:notes,dispatcher:currentUser?currentUser.email:'',override_date:new Date().toISOString()
+  }]).then(function(){
+    rodToast('Override logged ✓');
+    document.getElementById('dispatcher-override-modal').style.display='none';
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════════════
+function loadReports(period){
+  if(!currentClientId)return;
+  var wrap=document.getElementById('reports-content');if(!wrap)return;
+  wrap.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Loading...</div>';
+  var now=new Date(),startDate;
+  period=period||'month';
+  if(period==='today'){startDate=toDateStr(now);}
+  else if(period==='week'){var ws=getWeekStart(now);startDate=toDateStr(ws);}
+  else if(period==='month'){startDate=now.getFullYear()+'-'+(now.getMonth()<9?'0':'')+(now.getMonth()+1)+'-01';}
+  else{startDate=now.getFullYear()+'-01-01';}
+  var endDate=toDateStr(now);
+  sb.from('jobs').select('id,score,tech_name,tech_tier,reason,status,outcome,amount_collected,membership_sold,customer_type,scheduled_date,created_at').eq('client_id',currentClientId).gte('scheduled_date',startDate).lte('scheduled_date',endDate).then(function(r){
+    var jobs=r.data||[];
+    var completed=jobs.filter(function(j){return j.status==='completed';});
+    var totalRev=completed.reduce(function(s,j){return s+(j.amount_collected||0);},0);
+    var resRev=completed.filter(function(j){return j.customer_type!=='commercial';}).reduce(function(s,j){return s+(j.amount_collected||0);},0);
+    var commRev=completed.filter(function(j){return j.customer_type==='commercial';}).reduce(function(s,j){return s+(j.amount_collected||0);},0);
+    var memberships=jobs.filter(function(j){return j.membership_sold;}).length;
+    var avgScore=jobs.length?Math.round(jobs.reduce(function(s,j){return s+(j.score||0);},0)/jobs.length):0;
+    function fmtRev(v){return'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+    // By tech
+    var techMap={};
+    completed.forEach(function(j){
+      if(!j.tech_name)return;
+      if(!techMap[j.tech_name])techMap[j.tech_name]={jobs:0,rev:0,tier:j.tech_tier||'service'};
+      techMap[j.tech_name].jobs++;techMap[j.tech_name].rev+=(j.amount_collected||0);
+    });
+    var techRows=Object.entries(techMap).sort(function(a,b){return b[1].rev-a[1].rev;}).map(function(kv){
+      var tc=TIER_COLORS[kv[1].tier]||'var(--muted)';
+      return'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'+
+        '<span style="font-family:\'Share Tech Mono\',monospace;font-size:0.72rem;color:'+tc+';min-width:100px">'+kv[0]+'</span>'+
+        '<span style="color:var(--muted);font-size:0.78rem;min-width:50px">'+kv[1].jobs+' jobs</span>'+
+        '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;color:var(--accent3)">'+fmtRev(kv[1].rev)+'</span>'+
+      '</div>';
+    }).join('')||'<div style="color:var(--muted);font-size:0.8rem">No completed jobs in period.</div>';
+    wrap.innerHTML=
+      '<div class="stats-row">'+
+        '<div class="stat-card green"><div class="stat-label">Total Revenue</div><div class="stat-value" style="font-size:1.6rem">'+fmtRev(totalRev)+'</div></div>'+
+        '<div class="stat-card orange"><div class="stat-label">Jobs Completed</div><div class="stat-value">'+completed.length+'</div></div>'+
+        '<div class="stat-card blue"><div class="stat-label">Memberships Sold</div><div class="stat-value">'+memberships+'</div></div>'+
+        '<div class="stat-card yellow"><div class="stat-label">Avg Score</div><div class="stat-value">'+avgScore+'</div></div>'+
+      '</div>'+
+      '<div class="grid-2">'+
+        '<div class="panel"><div class="panel-header"><div class="panel-title">Revenue Split</div></div><div class="panel-body">'+
+          '<div class="rev-row"><div class="rev-label">Residential</div><div class="rev-bar-wrap"><div class="rev-bar" style="width:'+(totalRev?Math.round(resRev/totalRev*100):0)+'%;background:var(--accent)"></div></div><div class="rev-val" style="color:var(--accent)">'+fmtRev(resRev)+'</div></div>'+
+          '<div class="rev-row"><div class="rev-label">Commercial</div><div class="rev-bar-wrap"><div class="rev-bar" style="width:'+(totalRev?Math.round(commRev/totalRev*100):0)+'%;background:var(--accent2)"></div></div><div class="rev-val" style="color:var(--accent2)">'+fmtRev(commRev)+'</div></div>'+
+        '</div></div>'+
+        '<div class="panel"><div class="panel-header"><div class="panel-title">Revenue by Tech</div></div><div class="panel-body">'+techRows+'</div></div>'+
+      '</div>';
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// TECH PORTAL
+// ═══════════════════════════════════════════════════
+function loadTechPortal(){
+  if(!currentClientId)return;
+  var wrap=document.getElementById('tech-selector-wrap');if(!wrap)return;
+  sb.from('technicians').select('id,name,tier').eq('client_id',currentClientId).eq('status','active').order('name').then(function(r){
+    var techs=r.data||[];
+    if(!techs.length){wrap.innerHTML='<div style="color:var(--muted)">No active techs found.</div>';return;}
+    wrap.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">'+
+      techs.map(function(t){
+        var tc=TIER_COLORS[t.tier]||'var(--muted)';
+        return'<button onclick="selectTechPortal(\''+t.id+'\',\''+t.name+'\')" style="font-family:\'Share Tech Mono\',monospace;font-size:0.7rem;padding:8px 16px;border:1px solid '+tc+';border-radius:4px;background:transparent;color:'+tc+';cursor:pointer">'+t.name+'</button>';
+      }).join('')+
+    '</div>';
+  });
+}
+function selectTechPortal(techId,techName){
+  var body=document.getElementById('tech-portal-body');if(!body)return;
+  var today=toDateStr(new Date());
+  sb.from('jobs').select('*').eq('client_id',currentClientId).eq('tech_name',techName).eq('scheduled_date',today).neq('status','cancelled').order('sched_slot').then(function(r){
+    var jobs=r.data||[];
+    if(!jobs.length){body.innerHTML='<div style="padding:20px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:0.72rem">No jobs today for '+techName+'.</div>';return;}
+    body.innerHTML='<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.2rem;letter-spacing:2px;margin-bottom:16px">'+techName.toUpperCase()+' — TODAY\'S JOBS</div>'+
+      jobs.map(function(j){
+        var tc=TIER_COLORS[j.tech_tier]||'var(--muted)';
+        var statusColors={pending:'var(--muted)',enroute:'var(--warn)',arrived:'var(--accent2)',completed:'var(--accent3)',cancelled:'var(--danger)'};
+        return'<div style="padding:14px;background:var(--panel);border:1px solid var(--border);border-left:4px solid '+tc+';border-radius:6px;margin-bottom:10px">'+
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+            '<div><div style="font-weight:600;font-size:0.95rem">'+(j.customer_name||'Unknown')+'</div><div style="font-size:0.75rem;color:var(--muted)">'+(j.address||'No address')+'</div></div>'+
+            '<span style="font-family:\'Share Tech Mono\',monospace;font-size:0.6rem;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,0.06);color:'+(statusColors[j.status]||'var(--muted)')+'">'+((j.status||'pending').toUpperCase())+'</span>'+
+          '</div>'+
+          '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px">'+(j.reason||'').replace(/_/g,' ')+(j.csr_notes?' — '+j.csr_notes:'')+'</div>'+
+          (j.sched_slot?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.65rem;color:var(--accent2);margin-bottom:10px">⏰ '+SLOT_LABELS[j.sched_slot]+'</div>':'')+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+            (j.status==='pending'?'<button onclick="updateJobStatus(\''+j.id+'\',\'enroute\')" class="btn btn-outline btn-sm" style="color:var(--warn);border-color:rgba(234,179,8,0.4)">🚗 En Route</button>':'')+
+            (j.status==='enroute'?'<button onclick="updateJobStatus(\''+j.id+'\',\'arrived\')" class="btn btn-outline btn-sm" style="color:var(--accent2);border-color:rgba(14,165,233,0.4)">📍 Arrived</button>':'')+
+            (j.status==='arrived'?'<button onclick="openJobDetailModal(\''+j.id+'\')" class="btn btn-primary btn-sm">✓ Complete Job</button>':'')+
+          '</div>'+
+        '</div>';
+      }).join('');
+  });
+}
+function updateJobStatus(jobId,status){
+  sb.from('jobs').update({status:status}).eq('id',jobId).then(function(r){
+    if(r.error){rodToast('Update failed','danger');return;}
+    rodToast('Status updated: '+status.toUpperCase());
+    loadTechPortal();
+    loadSchedule();
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// TECH MANAGEMENT
+// ═══════════════════════════════════════════════════
+function loadTechRoster(){
+  if(!currentClientId)return;
+  sb.from('technicians').select('*').eq('client_id',currentClientId).order('tier').then(function(r){
+    var techs=r.data||[];
+    emgTechRoster=techs.filter(function(t){return t.status==='active';});
+    var wrap=document.getElementById('tech-roster-list');if(!wrap)return;
+    if(!techs.length){wrap.innerHTML='<div style="color:var(--muted);font-size:0.8rem">No techs yet.</div>';return;}
+    var tierOrder=['opportunity','service','maintenance','qa'];
+    var tierLabels={opportunity:'🔥 Opportunity',service:'🔧 Service / Repair',maintenance:'✅ Maintenance',qa:'🔬 QA'};
+    wrap.innerHTML=tierOrder.map(function(tier){
+      var tierTechs=techs.filter(function(t){return t.tier===tier;});
+      if(!tierTechs.length)return'';
+      var tc=TIER_COLORS[tier]||'var(--muted)';
+      return'<div style="margin-bottom:16px">'+
+        '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.62rem;letter-spacing:2px;color:'+tc+';margin-bottom:8px">'+tierLabels[tier]+'</div>'+
+        tierTechs.map(function(t){
+          return'<div class="tech-card" style="margin-bottom:6px">'+
+            '<div class="tech-avatar '+tier+'">'+t.name.charAt(0)+'</div>'+
+            '<div style="flex:1">'+
+              '<div style="font-weight:600">'+(t.name||'Unknown')+'</div>'+
+              '<div style="font-size:0.72rem;color:var(--muted)">'+(t.skills||'No skills listed')+'</div>'+
+              (t.proving_period?'<div style="font-size:0.65rem;color:var(--warn);margin-top:2px">⚠ Proving Period</div>':'')+
+            '</div>'+
+            '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+
+              '<span style="font-family:\'Share Tech Mono\',monospace;font-size:0.6rem;padding:2px 6px;border-radius:3px;background:'+(t.status==='active'?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)')+';color:'+(t.status==='active'?'var(--accent3)':'var(--danger)')+'">'+((t.status||'active').toUpperCase())+'</span>'+
+              '<button onclick="openEditTechModal(\''+t.id+'\')" class="btn btn-outline btn-sm">Edit</button>'+
+            '</div>'+
+          '</div>';
+        }).join('')+
+      '</div>';
+    }).join('');
+  });
+}
+function toggleAddTechForm(){
+  var f=document.getElementById('add-tech-form');if(f)f.style.display=f.style.display==='none'?'block':'none';
+}
+function addTech(){
+  var name=document.getElementById('new-tech-name').value.trim();
+  var phone=document.getElementById('new-tech-phone').value.trim();
+  var tier=document.getElementById('new-tech-tier').value;
+  var status=document.getElementById('new-tech-status').value;
+  var skills=document.getElementById('new-tech-skills').value.trim();
+  var proving=document.getElementById('new-tech-proving').checked;
+  if(!name){rodToast('Name required','warn');return;}
+  sb.from('technicians').insert([{client_id:currentClientId,name:name,phone:phone||null,tier:tier,status:status,skills:skills||null,proving_period:proving}]).then(function(r){
+    if(r.error){rodToast('Error: '+r.error.message,'danger');return;}
+    rodToast('Tech added: '+name);
+    toggleAddTechForm();
+    ['new-tech-name','new-tech-phone','new-tech-skills'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('new-tech-proving').checked=false;
+    loadTechRoster();loadTechRosterForScoring();
+  });
+}
+function openEditTechModal(techId){
+  sb.from('technicians').select('*').eq('id',techId).single().then(function(r){
+    if(!r.data)return;
+    var t=r.data;
+    var html='<div style="padding:16px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin-top:8px" id="edit-tech-inline">'+
+      '<input type="hidden" id="et-id" value="'+t.id+'"/>'+
+      '<div class="form-grid">'+
+        '<div class="form-group"><label>Name</label><input type="text" id="et-name" value="'+(t.name||'')+'"/></div>'+
+        '<div class="form-group"><label>Phone</label><input type="text" id="et-phone" value="'+(t.phone||'')+'"/></div>'+
+        '<div class="form-group"><label>Tier</label><select id="et-tier"><option value="opportunity"'+(t.tier==='opportunity'?' selected':'')+'>Opportunity</option><option value="service"'+(t.tier==='service'?' selected':'')+'>Service/Repair</option><option value="maintenance"'+(t.tier==='maintenance'?' selected':'')+'>Maintenance</option><option value="qa"'+(t.tier==='qa'?' selected':'')+'>QA</option></select></div>'+
+        '<div class="form-group"><label>Status</label><select id="et-status"><option value="active"'+(t.status==='active'?' selected':'')+'>Active</option><option value="inactive"'+(t.status!=='active'?' selected':'')+'>Inactive</option></select></div>'+
+        '<div class="form-group full"><label>Skills / Account Tags</label><input type="text" id="et-skills" value="'+(t.skills||'')+'"/></div>'+
+        '<div class="form-group full" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="et-proving" '+(t.proving_period?'checked':'')+' style="width:16px;height:16px"/><label style="text-transform:none;font-size:0.8rem;letter-spacing:0">Proving Period Active</label></div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;margin-top:12px">'+
+        '<button class="btn btn-primary btn-sm" onclick="saveEditTechInline()">Save</button>'+
+        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'edit-tech-inline\').remove()">Cancel</button>'+
+      '</div>'+
+    '</div>';
+    var existing=document.getElementById('edit-tech-inline');if(existing)existing.remove();
+    document.getElementById('tech-roster-list').insertAdjacentHTML('beforeend',html);
+  });
+}
+function saveEditTechInline(){
+  var id=document.getElementById('et-id').value;
+  sb.from('technicians').update({
+    name:document.getElementById('et-name').value,phone:document.getElementById('et-phone').value||null,
+    tier:document.getElementById('et-tier').value,status:document.getElementById('et-status').value,
+    skills:document.getElementById('et-skills').value||null,proving_period:document.getElementById('et-proving').checked
+  }).eq('id',id).then(function(r){
+    if(r.error){rodToast('Save failed','danger');return;}
+    rodToast('Tech updated ✓');
+    var e=document.getElementById('edit-tech-inline');if(e)e.remove();
+    loadTechRoster();loadTechRosterForScoring();
+  });
+}
+function loadOverrideLog(){
+  if(!currentClientId)return;
+  sb.from('override_log').select('*').eq('client_id',currentClientId).order('created_at',{ascending:false}).limit(20).then(function(r){
+    var wrap=document.getElementById('override-log-list');if(!wrap)return;
+    var logs=r.data||[];
+    if(!logs.length){wrap.innerHTML='<div style="color:var(--muted);font-size:0.78rem">No overrides logged.</div>';return;}
+    wrap.innerHTML=logs.map(function(l){
+      return'<div style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:0.78rem">'+
+        '<div style="color:var(--warn)">'+(l.tech_name||'Unknown')+'</div>'+
+        '<div style="color:var(--muted)">'+(l.reason||'')+'</div>'+
+        '<div style="font-size:0.65rem;color:var(--border)">'+(l.created_at?new Date(l.created_at).toLocaleDateString():'')+'</div>'+
+      '</div>';
+    }).join('');
+  });
+}
+function loadDispatcherOverrideLog(){
+  if(!currentClientId)return;
+  sb.from('dispatcher_overrides').select('*').eq('client_id',currentClientId).order('created_at',{ascending:false}).limit(20).then(function(r){
+    var wrap=document.getElementById('dispatcher-override-log-list');if(!wrap)return;
+    var logs=r.data||[];
+    if(!logs.length){wrap.innerHTML='<div style="color:var(--muted);font-size:0.78rem">No dispatcher overrides logged.</div>';return;}
+    wrap.innerHTML=logs.map(function(l){
+      return'<div style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:0.78rem">'+
+        '<div style="color:var(--accent2)">ROD: '+(l.rod_recommendation||'—')+' → '+(l.dispatcher_choice||'—')+'</div>'+
+        '<div style="color:var(--muted)">'+(l.reason||'')+(l.notes?' — '+l.notes:'')+'</div>'+
+        '<div style="font-size:0.65rem;color:var(--border)">'+(l.dispatcher||'')+(l.created_at?' · '+new Date(l.created_at).toLocaleDateString():'')+'</div>'+
+      '</div>';
+    }).join('');
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// DASHBOARD & ADMIN
+// ═══════════════════════════════════════════════════
+function loadDashboardCount(){
+  if(!currentClientId)return;
+  var today=toDateStr(new Date());
+  sb.from('jobs').select('id,status,amount_collected,membership_sold,customer_type').eq('client_id',currentClientId).gte('scheduled_date',today).then(function(r){
+    var jobs=r.data||[];
+    var pending=jobs.filter(function(j){return j.status==='pending'||j.status==='enroute'||j.status==='arrived';}).length;
+    var todayRev=jobs.filter(function(j){return j.status==='completed';}).reduce(function(s,j){return s+(j.amount_collected||0);},0);
+    var members=jobs.filter(function(j){return j.membership_sold;}).length;
+    var dc=document.getElementById('dash-calls');if(dc)dc.textContent=jobs.length;
+    var dp=document.getElementById('dash-pending');if(dp)dp.textContent=pending;
+    var dr=document.getElementById('dash-rev');if(dr)dr.textContent='$'+todayRev.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+    var dm=document.getElementById('dash-members');if(dm)dm.textContent=members;
+  });
+}
+function loadAdminPanel(){
+  if(!currentClientId)return;
+  loadDashboardCount();
+  // Tech status
+  sb.from('technicians').select('*').eq('client_id',currentClientId).eq('status','active').then(function(r){
+    var wrap=document.getElementById('admin-tech-status');if(!wrap)return;
+    var techs=r.data||[];
+    if(!techs.length){wrap.innerHTML='<div style="color:var(--muted);font-size:0.8rem">No active techs.</div>';return;}
+    wrap.innerHTML=techs.map(function(t){
+      var tc=TIER_COLORS[t.tier]||'var(--muted)';
+      return'<div class="tech-card">'+
+        '<div class="tech-avatar '+t.tier+'">'+t.name.charAt(0)+'</div>'+
+        '<div style="flex:1"><div style="font-weight:600">'+t.name+'</div><div style="font-size:0.7rem;color:'+tc+'">'+t.tier.toUpperCase()+'</div></div>'+
+        (t.proving_period?'<span style="font-size:0.6rem;color:var(--warn)">⚠ PROVING</span>':'')+
+      '</div>';
+    }).join('');
+  });
+}
+function loadAdminLiveFeed(){
+  if(!currentClientId)return;
+  var wrap=document.getElementById('admin-live-feed');if(!wrap)return;
+  var today=toDateStr(new Date());
+  sb.from('jobs').select('id,customer_name,tech_name,reason,status,score,created_at').eq('client_id',currentClientId).order('created_at',{ascending:false}).limit(20).then(function(r){
+    var jobs=r.data||[];
+    if(!jobs.length){wrap.innerHTML='<div style="color:var(--muted);font-size:0.78rem">No activity yet.</div>';return;}
+    wrap.innerHTML=jobs.map(function(j){
+      var statusColors={pending:'var(--muted)',enroute:'var(--warn)',arrived:'var(--accent2)',completed:'var(--accent3)',cancelled:'var(--danger)'};
+      return'<div style="padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer" onclick="openJobDetailModal(\''+j.id+'\')">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<span style="font-size:0.82rem;font-weight:600">'+(j.customer_name||'Unknown')+'</span>'+
+          '<span style="font-family:\'Share Tech Mono\',monospace;font-size:0.6rem;color:'+(statusColors[j.status]||'var(--muted)')+'">'+((j.status||'pending').toUpperCase())+'</span>'+
+        '</div>'+
+        '<div style="font-size:0.72rem;color:var(--muted)">'+(j.tech_name||'Unassigned')+' · '+(j.reason||'').replace(/_/g,' ')+'</div>'+
+        '<div style="font-size:0.65rem;color:var(--border);margin-top:2px">'+(j.created_at?new Date(j.created_at).toLocaleString():'')+'</div>'+
+      '</div>';
+    }).join('');
+  });
+  // Auto refresh every 30s
+  if(adminLiveFeedTimer)clearInterval(adminLiveFeedTimer);
+  adminLiveFeedTimer=setInterval(function(){loadAdminLiveFeed();},30000);
+}
+function checkAdmin(){
+  var isA=(currentUser&&currentUser.email===MASTER_EMAIL)||currentUserRole==='admin';
+  var ta=document.getElementById('tab-admin');if(ta)ta.style.display=isA?'':'none';
+}
+</script>
+</body>
+</html>
